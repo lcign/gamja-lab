@@ -10,6 +10,11 @@ below). Without it everything else still works and the dialog simply never opens
 
 Desktop only.
 
+![gamja with these customizations](screenshot.png)
+
+*Pinned channels at the top of the list, the 📌 next to the user count, JetBrains Mono and the dark
+theme.*
+
 ## What it adds
 
 **"Extra" panel** — a button injected next to *Settings* in the bouncer view:
