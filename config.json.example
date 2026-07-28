@@ -1,6 +1,6 @@
 {
 	"server": {
-		"url": "wss://EXAMPLE.invalid/socket",
+		"url": "wss://YOUR-BOUNCER.example/socket",
 		"auth": "mandatory"
 	}
 }

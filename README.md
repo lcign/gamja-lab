@@ -54,16 +54,20 @@ of its name.
    file. It also helps to serve `index.html`, `config.json`, `custom.css` and `custom.js` with
    `Cache-Control: no-store`.
 
-3. gamja's `config.json`, pointing at your own bouncer:
+3. Copy `config.json.example` to `config.json` and **replace the URL with your own bouncer's
+   WebSocket endpoint** — the example value is a placeholder and connects to nothing:
 
    ```json
    {
      "server": {
-       "url": "wss://EXAMPLE.invalid/socket",
+       "url": "wss://YOUR-BOUNCER.example/socket",
        "auth": "mandatory"
      }
    }
    ```
+
+   `auth` can be `mandatory` (always ask for credentials), `optional`, or `external` (client
+   certificate). Nickname, autojoin channels and networks are configured in soju, not here.
 
    ⚠️ The WebSocket **must live on the same origin** as the gamja page. If the page's Origin does not
    match the WebSocket's Host, soju refuses the connection with
@@ -119,6 +123,9 @@ Unrelated to these customizations — they fix actual gamja defects:
 
 ## Notes
 
+- Nothing here is tied to any particular deployment: these files are plain browser-side CSS/JS and
+  do not know, or care, where your gamja is hosted or how you reach it. The only place your own
+  server appears is `config.json`, which you provide — it is not part of this repository.
 - Settings live in the browser's `localStorage`, so they are **per-browser** and do not travel with
   the files: `gamja_theme`, `gamja_fs`, `gamja_list_rows`, `gamja_pins_side`.
 - The 📌 color is approximate. Emoji are drawn by a color font, so `color` has no effect on them; the
