@@ -136,5 +136,5 @@ Unrelated to these customizations — they fix actual gamja defects:
 ## Licenses
 
 `custom.css` and `custom.js` are original work. gamja itself is **AGPL-3.0** and is not included
-here. **JetBrains Mono** is licensed under the **SIL Open Font License 1.1**: if you redistribute
-`fonts/`, ship the license text with it.
+here. **JetBrains Mono** is licensed under the **SIL Open Font License 1.1**; its license text ships
+with the fonts in [`fonts/OFL.txt`](fonts/OFL.txt).
