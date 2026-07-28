@@ -1,0 +1,13 @@
+<!-- Example: gamja's index.html with the customizations hooked in.
+     Both tags go AFTER the bundle. Bump ?v=N whenever you change the files. -->
+<!DOCTYPE html><meta charset=utf-8>
+<meta http-equiv=Content-Security-Policy content="default-src 'self'; frame-src 'none'; object-src 'none'; connect-src *;">
+<title>gamja IRC client</title>
+<link rel=stylesheet href=build.HASH.css>
+<link rel=stylesheet href="custom.css?v=1">
+<script src="custom.js?v=1"></script>
+<script type=module src=build.HASH.js></script>
+<meta name=viewport content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+<link rel=manifest href=manifest.webmanifest>
+<body>
+    <noscript><p>This application requires JavaScript. Please enable it!</p></noscript>

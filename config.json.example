@@ -1,0 +1,6 @@
+{
+	"server": {
+		"url": "wss://EXAMPLE.invalid/socket",
+		"auth": "mandatory"
+	}
+}
