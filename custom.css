@@ -1,11 +1,11 @@
-/* gamja: tema dark + JetBrains Mono (look terminale) + pannello "Colori tema" (colori + zoom testo).
-   Caricato DOPO build.*.css -> sovrascrive :root. CSP-safe (nessun inline). */
+/* gamja: dark theme + JetBrains Mono (terminal look) + "Extra" panel (colors + text zoom).
+   Loaded AFTER build.*.css -> overrides :root. CSP-safe: nothing inline. */
 
 @font-face{font-family:'JetBrains Mono';src:url('fonts/JetBrainsMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:'JetBrains Mono';src:url('fonts/JetBrainsMono-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
 @font-face{font-family:'JetBrains Mono';src:url('fonts/JetBrainsMono-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
 
-/* --- dark sempre attivo (valori del tema dark di gamja, indipendenti dal sistema) --- */
+/* --- dark always on (gamja's own dark values, independent of the OS setting) --- */
 :root{
 	color-scheme:dark;
 	--main-background:#212529;
@@ -32,26 +32,26 @@
 	--activity-color:#d9a441;
 }
 
-/* --- tutto in JetBrains Mono (terminale) --- */
+/* --- everything in JetBrains Mono (terminal look) --- */
 body, body *, input, button, textarea, select{
 	font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace !important;
 }
 
-/* --- zoom testo: --fs (settato dal pannello Colori) scala il font-size di root (gamja usa unita relative) --- */
+/* --- text zoom: --fs (set by the Extra panel) scales the root font-size (gamja uses relative units) --- */
 html{font-size:calc(16px * var(--fs,1))}
 
-/* box messaggio: testo chiaro */
+/* composer box: light text */
 #composer input[type=text]{color:var(--main-color) !important}
 #composer input[type=text]::placeholder{color:var(--gray) !important}
 
-/* lista canali a sx: la voce con MENZIONE (unread-highlight) usa un blu fisso in gamja;
+/* left channel list: the MENTION entry (unread-highlight) is a hardcoded blue in gamja;
    la collego alle variabili Highlight del pannello (testo + sfondo) */
 #buffer-list li.unread-highlight > a{
 	color:var(--highlight-color) !important;
 	background-color:var(--highlight-bg) !important;
 }
 
-/* --- pannello "Colori tema" (custom.js) --- */
+/* --- "Extra" panel (custom.js) --- */
 .colors-btn{margin-left:0}
 #themeBackdrop{position:fixed;inset:0;z-index:10021;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
 #themeBackdrop.hidden{display:none}
@@ -74,7 +74,7 @@ html{font-size:calc(16px * var(--fs,1))}
 #themePanel .tp-reset{margin-top:10px;width:100%;background:var(--button-background);color:var(--button-color);
 	border:1px solid var(--button-border);border-radius:6px;padding:6px;cursor:pointer;font-size:12px}
 
-/* --- modal /list (custom.js): lista canali ordinabile --- */
+/* --- /list dialog (custom.js): sortable channel list --- */
 #listBackdrop{position:fixed;inset:0;z-index:10031;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center}
 #listBackdrop.hidden{display:none}
 #listPanel{background:var(--sidebar-background);color:var(--main-color);border:1px solid var(--expander-border,#6c6c6c);
@@ -99,26 +99,26 @@ html{font-size:calc(16px * var(--fs,1))}
 #listPanel .lp-t{color:var(--gray);font-size:0.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #listPanel .lp-more{padding:0.7rem 1rem;color:var(--gray);font-size:0.92rem;text-align:center}
 
-/* pin canale (stile senpai) nell'intestazione della lista utenti */
+/* channel pin (senpai-style) in the member list header */
 #member-list-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #member-list-header .mlh-pin{background:none;border:none;color:inherit;cursor:pointer;font-size:1rem;
 	line-height:1;padding:0 2px;opacity:.3;filter:var(--pin-filter,none)}
 #member-list-header .mlh-pin:hover{opacity:.65}
 #member-list-header .mlh-pin.on{opacity:1}
 
-/* lista canali: flex column per poter riordinare via `order` (assegnato da custom.js) */
+/* channel list: flex column so entries can be reordered via `order` (assigned by custom.js) */
 #buffer-list ul{display:flex;flex-direction:column}
 #buffer-list li[data-pin] > a::before{content:"📌";font-size:.8em;margin-right:.35em;opacity:.75;
 	filter:var(--pin-filter,none);display:inline-block}
 
-/* sidebar sinistra (lista canali): sfondo/testo propri, indipendenti da --sidebar-background
+/* left sidebar (channel list): its own background/text, independent of --sidebar-background
    che gamja condivide con la lista utenti a destra. custom.css è caricato dopo build.*.css. */
 #buffer-list{background-color:var(--bl-background,var(--sidebar-background))}
 #buffer-list li a{color:var(--bl-color,var(--main-color))}
-/* canale selezionato: gamja lo inchioda a background-color:#fff, qui diventa configurabile */
+/* selected channel: gamja nails it to background-color:#fff, here it becomes configurable */
 #buffer-list li.active a{background-color:var(--bl-active-bg,#fff);color:var(--bl-active-color,var(--sidebar-background))}
 
-/* pannello Extra: riga numerica + avviso + separatore di sezione */
+/* Extra panel: numeric row + warning + section separator */
 #themePanel .tp-num{width:4.2rem;background:var(--main-background);color:var(--main-color);
 	border:1px solid var(--expander-border,#6c6c6c);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.95rem}
 #themePanel .tp-warn{color:var(--gray);font-size:11px;line-height:1.3;padding:0 0 6px}

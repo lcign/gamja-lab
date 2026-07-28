@@ -1,14 +1,14 @@
-/* gamja: Colori tema + zoom testo (CSSOM) + cronologia comandi ↑/↓ + modal /list.
-   Versione SNELLA: nessun wrapper WebSocket, nessun MutationObserver sull'intero DOM,
-   nessun logger. Il modal /list legge i dati dall'evento `gamja-list` emesso da un hook
-   minimale nel bundle (che raccoglie i numerici 322/323). CSP-safe (nessun inline). */
+/* gamja: theme colors + text zoom (CSSOM) + command history ↑/↓ + /list dialog.
+   LEAN build: no WebSocket wrapper, no document-wide MutationObserver, no logger.
+   The /list dialog reads its data from the `gamja-list` event emitted by a minimal hook
+   in the bundle (which collects the 321/322/323 numerics). CSP-safe: nothing inline. */
 
-/* ===================== Colori tema + zoom ===================== */
+/* ===================== theme colors + zoom ===================== */
 (function () {
-	/* Il 📌 è un'emoji: la disegna un font a colori, quindi `color` non la tocca. L'unico modo per
-	   ricolorarla senza sostituire il glifo è un filtro CSS derivato dal colore scelto -> la tinta
-	   segue il picker ma NON coincide col colore esatto (limite noto, accettato). */
-	var PIN_DEFAULT = '#e0342b';   // rosso dominante dell'emoji: a questo valore il filtro è none
+	/* 📌 is an emoji, drawn by a color font, so `color` does not touch it. The only way to recolor
+	   it without replacing the glyph is a CSS filter derived from the chosen color -> the hue
+	   follows the picker but does NOT match it exactly (known limitation, accepted). */
+	var PIN_DEFAULT = '#e0342b';   // the emoji's dominant red: at this value the filter is none
 	function hueSat(hex) {
 		var m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex || '');
 		if (!m) return null;
@@ -99,7 +99,7 @@
 		zrow.appendChild(zlab); zrow.appendChild(zminus); zrow.appendChild(znum); zrow.appendChild(zplus);
 		panel.appendChild(zrow);
 
-		// tetto righe disegnate dal modal /list: letto da lì a ogni render (localStorage gamja_list_rows)
+		// row cap for the /list dialog: read there on every render (localStorage gamja_list_rows)
 		var lrow = document.createElement('div'); lrow.className = 'tp-zoom';
 		var llab = document.createElement('span'); llab.textContent = 'Max rows in /list';
 		var linp = document.createElement('input'); linp.type = 'number'; linp.className = 'tp-num';
@@ -147,8 +147,8 @@
 	function hide() { if (backdrop) backdrop.classList.add('hidden'); }
 	function toggle() { buildPanel().classList.toggle('hidden'); }
 
-	// inietta il bottone "Extra" accanto a Settings (solo vista bouncer). Check LEGGERO a intervallo,
-	// niente MutationObserver sul rendering dei messaggi.
+	// injects the "Extra" button next to Settings (bouncer view only). LIGHT interval check,
+	// no MutationObserver on message rendering.
 	function injectColorsButton() {
 		var btns = document.getElementsByTagName('button');
 		var settingsBtn = null, hasAddNetwork = false;
@@ -174,7 +174,7 @@
 	injectColorsButton();
 })();
 
-/* ===================== cronologia comandi ↑/↓ ===================== */
+/* ===================== command history ↑/↓ ===================== */
 (function () {
 	var MAX = 200, hist = [], idx = 0, draft = '';
 	function composerInput(t) {
@@ -211,12 +211,12 @@
 	}, true);
 })();
 
-/* ===================== pin canali (stile senpai) =====================
-   Store proprio (localStorage `gamja_pins_side`, nomi canale in minuscolo): indipendente dai
-   preferiti del modal /list, che restano su `gamja_pins`.
-   Il canale pinnato va in cima alla lista canali SENZA toccare i <li> renderizzati da preact:
-   l'ordine è dato da un <style> generato che seleziona per href. L'unico innesto nel DOM di gamja
-   è il bottone 📌 dentro #member-list-header, reiniettato a intervallo come il bottone Extra. */
+/* ===================== channel pinning (senpai-style) =====================
+   Own store (localStorage `gamja_pins_side`, channel names lowercased).
+   A pinned channel floats to the top of the channel list WITHOUT touching the <li> elements
+   preact renders: ordering is written as `style.order` + `data-pin` on them. The only graft into
+   gamja's DOM is the 📌 button inside #member-list-header, re-injected on an interval like the
+   Extra button. */
 (function () {
 	var PKEY = 'gamja_pins_side';
 	var pins; try { pins = JSON.parse(localStorage.getItem(PKEY)) || []; } catch (e) { pins = []; }
@@ -231,8 +231,8 @@
 		markPinned();
 	}
 
-	// nome canale di una voce della sidebar: dall'href (`irc:///<entita-urlencoded>`, i buffer
-	// utente hanno ",isuser"), con fallback sull'etichetta se l'href cambiasse forma.
+	// channel name of a sidebar entry: from the href (`irc:///<url-encoded entity>`; user buffers
+	// carry ",isuser"), falling back to the label in case the href shape ever changes.
 	function chanOf(a) {
 		if (!a) return null;
 		var h = a.getAttribute('href') || '', name = '';
@@ -243,11 +243,11 @@
 	}
 	function activeChannel() { return chanOf(document.querySelector('#buffer-list li.active > a')); }
 
-	// Ordinamento come senpai: i pinnati vanno in cima all'INTERA lista, subito sotto la prima
-	// riga (il bouncer), quindi sopra le reti. Serve un ordine calcolato, non un order:-1 fisso,
-	// perché la riga del bouncer deve restare prima. Scrivo `style.order` e `data-pin` sui <li>:
-	// nessuna delle due è una prop gestita da preact, quindi sopravvivono ai re-render
-	// (`class` invece verrebbe riscritta).
+	// senpai-style ordering: pinned channels go to the top of the WHOLE list, right below the
+	// first row (the bouncer), hence above the networks. This needs a computed order rather than a
+	// fixed order:-1, because the bouncer row must stay first. `style.order` and `data-pin` are
+	// written onto the <li>: neither is a prop preact manages, so both survive re-renders
+	// (a `class` would be rewritten instead).
 	function markPinned() {
 		var ul = document.querySelector('#buffer-list ul');
 		if (!ul) return;
@@ -291,7 +291,7 @@
 	tick();
 })();
 
-/* ===================== modal /list (dati dall'evento `gamja-list`) ===================== */
+/* ===================== /list dialog (data from the `gamja-list` event) ===================== */
 (function () {
 	var chans = [];
 	var backdrop, panel, listEl, searchEl, titleEl, bUsers, bName, sortMode = 'users';
@@ -329,7 +329,7 @@
 		bName.classList.toggle('active', mode === 'name');
 		render();
 	}
-	// tetto righe: impostabile dal pannello Extra, riletto a ogni render
+	// row cap: configurable from the Extra panel, re-read on every render
 	function maxRows() { var v = parseInt(localStorage.getItem('gamja_list_rows'), 10); return v > 0 ? v : 2000; }
 	function render() {
 		var MAXROWS = maxRows();
@@ -342,7 +342,7 @@
 		});
 		listEl.innerHTML = '';
 		var n = Math.min(arr.length, MAXROWS);
-		// quanti ne stai vedendo (filtro + tetto MAXROWS) sul totale ricevuto dalla LIST
+		// how many you are seeing (filter + MAXROWS cap) out of the total received from LIST
 		titleEl.textContent = n < chans.length
 			? 'Channel list (' + n + ' of ' + chans.length + ')'
 			: 'Channel list (' + chans.length + ')';
@@ -371,8 +371,8 @@
 			inp.focus();
 			inp.value = '/join ' + chan;
 			try { inp.dispatchEvent(new InputEvent('input', { bubbles: true })); } catch (e) { inp.dispatchEvent(new Event('input', { bubbles: true })); }
-			// submit rimandato: gamja al submit legge state.text (controllato), che preact
-			// aggiorna in modo asincrono dall'evento input -> senza il rinvio invierebbe vuoto.
+			// deferred submit: on submit gamja reads state.text (controlled), which preact updates
+			// asynchronously from the input event -> without the deferral it would send empty.
 			setTimeout(function () {
 				if (comp.requestSubmit) comp.requestSubmit(); else comp.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 			}, 0);
