@@ -113,6 +113,10 @@
 		lrow.appendChild(llab); lrow.appendChild(linp);
 		panel.appendChild(lrow); panel.appendChild(lwarn);
 
+		// Hook for blocks living outside this closure: they append their own rows here, right
+		// before the colors. If nobody listens, nothing happens.
+		document.dispatchEvent(new CustomEvent('gamja-extra-panel', { detail: { panel: panel } }));
+
 		var csep = document.createElement('div'); csep.className = 'tp-sec'; csep.textContent = 'Colors';
 		panel.appendChild(csep);
 		VARS.forEach(function (v) {
@@ -136,6 +140,7 @@
 			localStorage.removeItem(RKEY); linp.value = String(ROWS_DEF); lshow();
 			var inputs = panel.querySelectorAll('input[type=color]');
 			for (var i = 0; i < inputs.length; i++) inputs[i].value = VARS[i][2];
+			document.dispatchEvent(new CustomEvent('gamja-extra-reset'));
 		});
 		panel.appendChild(reset);
 		backdrop.appendChild(panel);
@@ -660,4 +665,40 @@
 		var a = next.firstElementChild;
 		if (a && a.click) a.click();
 	}, true);
+})();
+
+/* ===================== unread dot =====================
+   Pure CSS: this only flips an attribute on <html>, which the rule in custom.css uses as its
+   switch. Nothing runs at rest — one localStorage read at load. */
+(function () {
+	var KEY = 'gamja_unread_dot';
+	function on() { return localStorage.getItem(KEY) !== '0'; }    // on unless explicitly refused
+	function apply() {
+		var r = document.documentElement;
+		if (on()) r.setAttribute('data-unread-dot', ''); else r.removeAttribute('data-unread-dot');
+	}
+	apply();
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.ud-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom ud-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Unread dot';
+		var chk = document.createElement('input');
+		chk.type = 'checkbox'; chk.checked = on(); chk.style.flex = 'none';
+		chk.addEventListener('change', function () {
+			localStorage.setItem(KEY, chk.checked ? '1' : '0');
+			apply();
+		});
+		row.appendChild(lab); row.appendChild(chk);
+		panel.appendChild(row);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		localStorage.removeItem(KEY); apply();
+		var chk = document.querySelector('.ud-row input[type=checkbox]');
+		if (chk) chk.checked = true;
+	});
 })();

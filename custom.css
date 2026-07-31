@@ -183,3 +183,19 @@ kbd{
 	box-shadow:none;color:inherit;
 	font-family:inherit;font-size:.85em;line-height:1.4;
 	padding:.1em .45em;margin:0 2px;border-radius:4px}
+
+/* ===== unread dot (toggle in the Extra panel) =====
+   ⚠️ gamja does NOT count messages: `unread` is a three-level enum (NONE / MESSAGE / HIGHLIGHT),
+   which is where the `unread-message` and `unread-highlight` classes come from. A number cannot be
+   derived without touching the bundle, so this only signals presence.
+   The dot has no color of its own, it inherits `currentColor`: that way it follows the Accent for
+   activity and the Mention color for highlights, whatever combination is picked in the panel. */
+:root[data-unread-dot] #buffer-list li.unread-message > a::after,
+:root[data-unread-dot] #buffer-list li.unread-highlight > a::after{
+	content:"•";float:right;margin-left:.4em;line-height:1.05;font-size:1.15em}
+
+/* ⚠️ gamja bug, same family as the <kbd> one: the Accent color for channels with activity is only
+   declared inside `@media (prefers-color-scheme: dark)`. The dark theme here is forced regardless
+   of the system setting, so with the OS in LIGHT mode a hardcoded orange (#b37400) was used and the
+   panel's "Accent" entry had no effect on the channel list. */
+#buffer-list li.unread-message > a{color:var(--green)}

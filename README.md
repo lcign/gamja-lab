@@ -21,6 +21,7 @@ theme.*
 
 - **text zoom** A−/A+ (0.3× → 1.8×), applied through the `--fs` CSS variable
 - **max rows in the `/list` dialog** (default 2000, range 100–50000) with a warning above 5000
+- **unread dot**: a dot next to channels with activity or a mention, on by default
 - **theme colors**: background, text, side panels, buttons, mentions, channel activity — plus a few
   things gamja does not expose:
   `--bl-background` / `--bl-color` (background and text of the left channel list *only*, which gamja
@@ -179,6 +180,18 @@ Unrelated to these customizations — they fix actual gamja defects:
 - The Alt+↑/↓ override is a capture listener on `window`, which runs before gamja's bubble listener
   on the same target and stops it with `stopPropagation()` — otherwise both would move and the
   buffer would jump twice.
+- The unread dot only signals presence, never a count: gamja's `unread` is a three-level enum
+  (`NONE` / `MESSAGE` / `HIGHLIGHT`), so no number exists to show. Getting one would mean reading
+  preact's internal state through mangled property names, or wrapping the WebSocket — the very thing
+  that made gamja sluggish the first time round. The dot inherits `currentColor`, so it follows the
+  Accent and Mention colors on its own.
+- ⚠️ **Second gamja bug of the same family as the `kbd` one:** the Accent color for channels with
+  activity is only declared inside `@media (prefers-color-scheme: dark)`. With the dark theme forced
+  regardless of the system setting, running the OS in *light* mode fell back to a hardcoded orange
+  and the panel's *Accent* entry had no effect on the channel list. `custom.css` declares it
+  unconditionally.
+- Blocks that live outside the panel's closure add their rows through two events, `gamja-extra-panel`
+  and `gamja-extra-reset`. If nothing listens, nothing happens.
 - CSP-safe: no inline styles or scripts, colors are applied through the CSSOM.
 - **Mobile is not supported.** It was attempted and abandoned: on iPhone Safari, elements appended to
   `<body>` outside preact's tree only ever receive `pointerdown`, never `click`/`touchend`, which
