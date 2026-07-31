@@ -1,4 +1,4 @@
-/* gamja: theme colors + text zoom (CSSOM) + command history ↑/↓ + /list dialog.
+/* gamja: theme colors + text zoom (CSSOM) + command history ↑/↓ + /list dialog + buffer search.
    LEAN build: no WebSocket wrapper, no document-wide MutationObserver, no logger.
    The /list dialog reads its data from the `gamja-list` event emitted by a minimal hook
    in the bundle (which collects the 321/322/323 numerics). CSP-safe: nothing inline. */
@@ -381,4 +381,155 @@
 	}
 	function openList() { build(); render(); backdrop.classList.remove('hidden'); }
 	function hide() { if (backdrop) backdrop.classList.add('hidden'); }
+})();
+
+/* ===================== buffer search (⌘F / Ctrl+F) =====================
+   gamja has no search at all: in the bundle, `search` only ever shows up as `location.search`.
+   This block searches the lines already rendered in the active buffer. It runs only while the
+   dialog is open: no observer, no timer, nothing ticking in the background.
+
+   ⚠️ It does NOT touch the buffer's DOM, which belongs to preact: the lines are only READ. The one
+   write is a temporary outline on the line you jump to, which a re-render simply drops without
+   breaking anything. Results are built with createTextNode, never innerHTML: the text comes from
+   IRC and must not be able to become markup. */
+(function () {
+	var MAXROWS = 400;
+	var backdrop = null, panel = null, inputEl = null, listEl = null, metaEl = null;
+	var hits = [], sel = -1;
+
+	function lines() {
+		var buf = document.getElementById('buffer');
+		return buf ? buf.querySelectorAll('.logline') : [];
+	}
+
+	/* every word must appear, in any order, case-insensitive */
+	function terms(q) {
+		var out = [], p = q.toLowerCase().split(/\s+/), i;
+		for (i = 0; i < p.length; i++) if (p[i]) out.push(p[i]);
+		return out;
+	}
+
+	function search() {
+		var q = (inputEl.value || '').trim();
+		hits = []; sel = -1;
+		while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+		if (!q) { metaEl.textContent = 'Type to search the messages currently loaded'; return; }
+
+		var t = terms(q), all = lines(), i, j;
+		for (i = 0; i < all.length; i++) {
+			var txt = all[i].textContent || '', low = txt.toLowerCase(), ok = true;
+			for (j = 0; j < t.length; j++) if (low.indexOf(t[j]) < 0) { ok = false; break; }
+			if (ok) hits.push({ el: all[i], txt: txt, low: low });
+		}
+
+		metaEl.textContent = hits.length
+			? hits.length + (hits.length === 1 ? ' result' : ' results')
+				+ (hits.length > MAXROWS ? ' (showing ' + MAXROWS + ')' : '')
+			: 'no match in the messages currently loaded';
+
+		var n = Math.min(hits.length, MAXROWS);
+		for (i = 0; i < n; i++) listEl.appendChild(row(hits[i], i, t));
+		if (n) select(0, false);
+	}
+
+	/* highlight the earliest matching term, without innerHTML */
+	function row(hit, idx, t) {
+		var div = document.createElement('div');
+		div.className = 'fp-row'; div.dataset.i = String(idx);
+		var txt = hit.txt.replace(/\s+/g, ' ').trim();
+		var low = txt.toLowerCase(), at = -1, len = 0, k;
+		for (k = 0; k < t.length; k++) {
+			var p = low.indexOf(t[k]);
+			if (p >= 0 && (at < 0 || p < at)) { at = p; len = t[k].length; }
+		}
+		if (at < 0) { div.appendChild(document.createTextNode(txt)); }
+		else {
+			var from = at > 60 ? at - 60 : 0;                       // keep a window around the word
+			var head = (from ? '… ' : '') + txt.slice(from, at);
+			div.appendChild(document.createTextNode(head));
+			var mk = document.createElement('mark'); mk.className = 'fp-mk';
+			mk.appendChild(document.createTextNode(txt.slice(at, at + len)));
+			div.appendChild(mk);
+			div.appendChild(document.createTextNode(txt.slice(at + len)));
+		}
+		div.addEventListener('click', function () { select(idx, true); jump(); });
+		return div;
+	}
+
+	function select(i, scrollIntoList) {
+		var rows = listEl.children, k;
+		if (i < 0 || i >= rows.length) return;
+		for (k = 0; k < rows.length; k++) rows[k].classList.remove('sel');
+		rows[i].classList.add('sel'); sel = i;
+		if (scrollIntoList !== false && rows[i].scrollIntoView) rows[i].scrollIntoView({ block: 'nearest' });
+	}
+
+	function jump() {
+		var h = hits[sel];
+		if (!h || !h.el || !h.el.isConnected) return;
+		hide();
+		h.el.scrollIntoView({ block: 'center' });
+		var st = h.el.style, oldO = st.outline, oldR = st.borderRadius;
+		st.outline = '2px solid var(--green, #3fb950)';
+		st.outlineOffset = '2px'; st.borderRadius = '3px';
+		setTimeout(function () {
+			if (!h.el) return;
+			h.el.style.outline = oldO; h.el.style.outlineOffset = '';
+			h.el.style.borderRadius = oldR;
+		}, 1600);
+	}
+
+	function build() {
+		if (backdrop) return backdrop;
+		backdrop = document.createElement('div');
+		backdrop.id = 'findBackdrop'; backdrop.className = 'hidden';
+		panel = document.createElement('div'); panel.id = 'findPanel';
+
+		var head = document.createElement('div'); head.className = 'fp-head';
+		var h = document.createElement('div'); h.className = 'fp-h'; h.textContent = 'Search in buffer';
+		var close = document.createElement('button'); close.type = 'button';
+		close.className = 'fp-close'; close.textContent = '✕'; close.title = 'Close';
+		close.addEventListener('click', hide);
+		head.appendChild(h); head.appendChild(close); panel.appendChild(head);
+
+		var bar = document.createElement('div'); bar.className = 'fp-bar';
+		inputEl = document.createElement('input'); inputEl.type = 'text'; inputEl.className = 'fp-search';
+		inputEl.placeholder = 'text, nick, several words…'; inputEl.autocomplete = 'off';
+		inputEl.addEventListener('input', search);
+		bar.appendChild(inputEl); panel.appendChild(bar);
+
+		metaEl = document.createElement('div'); metaEl.className = 'fp-meta';
+		panel.appendChild(metaEl);
+		listEl = document.createElement('div'); listEl.className = 'fp-list';
+		panel.appendChild(listEl);
+
+		var foot = document.createElement('div'); foot.className = 'fp-foot';
+		foot.textContent = '↑↓ move · Enter jumps to the line · Esc closes — searches only the '
+			+ 'messages already loaded: scroll up in the buffer to load more';
+		panel.appendChild(foot);
+
+		backdrop.appendChild(panel);
+		document.body.appendChild(backdrop);
+		backdrop.addEventListener('click', function (e) { if (e.target === backdrop) hide(); });
+		return backdrop;
+	}
+
+	function show() {
+		build().classList.remove('hidden');
+		inputEl.focus(); inputEl.select();
+		search();
+	}
+	function hide() { if (backdrop) backdrop.classList.add('hidden'); }
+	function open() { return backdrop && !backdrop.classList.contains('hidden'); }
+
+	document.addEventListener('keydown', function (e) {
+		if ((e.metaKey || e.ctrlKey) && !e.altKey && (e.key === 'f' || e.key === 'F')) {
+			e.preventDefault(); show(); return;                  // replaces the browser's find
+		}
+		if (!open()) return;
+		if (e.key === 'Escape') { e.preventDefault(); hide(); return; }
+		if (e.key === 'ArrowDown') { e.preventDefault(); select(sel + 1); return; }
+		if (e.key === 'ArrowUp')   { e.preventDefault(); select(sel - 1); return; }
+		if (e.key === 'Enter')     { e.preventDefault(); jump(); return; }
+	}, true);
 })();

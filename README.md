@@ -36,6 +36,11 @@ of its name.
 **`/list` dialog** — sortable channel list (by user count or name), filter on name and topic,
 *shown / total* counter, click a row to join.
 
+**Buffer search (⌘F / Ctrl+F)** — gamja has none. A dialog that filters the lines already rendered
+in the active buffer: several words match in any order, case-insensitive, the matched term is
+highlighted, `↑↓` moves through the results and Enter jumps to the line in the buffer, which flashes
+an outline. It replaces the browser's own find while gamja has focus.
+
 **Command history ↑/↓** in the composer, shell style (deduplicated, capped at 200 entries).
 
 **Forced dark theme** with self-hosted JetBrains Mono.
@@ -128,6 +133,12 @@ Unrelated to these customizations — they fix actual gamja defects:
   server appears is `config.json`, which you provide — it is not part of this repository.
 - Settings live in the browser's `localStorage`, so they are **per-browser** and do not travel with
   the files: `gamja_theme`, `gamja_fs`, `gamja_list_rows`, `gamja_pins_side`.
+- Search only covers the messages **currently rendered**. soju replays what is unread and the rest
+  arrives as you scroll up, so searching further back means loading it first. Reaching real history
+  would mean querying the bouncer, which is outside what browser-side files can do.
+- The search dialog reads the buffer's lines and never mutates them; the only write is the temporary
+  outline on the line you jump to, which a re-render drops on its own. Result rows are assembled with
+  `createTextNode`, never `innerHTML`, since the text comes straight from IRC.
 - The 📌 color is approximate. Emoji are drawn by a color font, so `color` has no effect on them; the
   picker derives a filter (`hue-rotate` + `saturate` + `brightness`) from the chosen color, so the
   hue follows the picker without matching it. A tinted SVG icon via `mask` is not an option either:

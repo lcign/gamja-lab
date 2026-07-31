@@ -125,3 +125,24 @@ html{font-size:calc(16px * var(--fs,1))}
 #themePanel .tp-warn.hot{color:var(--red)}
 #themePanel .tp-sec{color:var(--gray);font-size:10px;text-transform:uppercase;letter-spacing:.08em;
 	padding:8px 0 4px;border-top:1px solid var(--main-background)}
+
+/* ===== buffer search (⌘F) — same visual language as the /list dialog ===== */
+#findBackdrop{position:fixed;inset:0;z-index:10032;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding-top:8vh}
+#findBackdrop.hidden{display:none}
+#findPanel{background:var(--sidebar-background);color:var(--main-color);border:1px solid var(--expander-border,#6c6c6c);
+	border-radius:8px;width:min(760px,92vw);max-height:76vh;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#findPanel .fp-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid var(--main-background)}
+#findPanel .fp-h{font-weight:700;font-size:1.05rem}
+#findPanel .fp-close{background:none;border:none;color:var(--main-color);cursor:pointer;font-size:1.15rem;line-height:1;padding:2px 4px}
+#findPanel .fp-bar{padding:.6rem 1rem}
+#findPanel .fp-search{width:100%;background:var(--main-background);color:var(--main-color);border:1px solid var(--expander-border,#6c6c6c);
+	border-radius:5px;padding:.4rem .6rem;font:inherit}
+#findPanel .fp-search::placeholder{color:var(--gray)}
+#findPanel .fp-meta{padding:0 1rem .5rem;color:var(--gray);font-size:.85rem}
+#findPanel .fp-list{overflow-y:auto;padding:2px 0;border-top:1px solid var(--main-background)}
+#findPanel .fp-row{padding:.35rem 1rem;font-size:.92rem;line-height:1.35;cursor:pointer;
+	white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#findPanel .fp-row:hover{background:var(--main-background)}
+#findPanel .fp-row.sel{background:var(--main-background);box-shadow:inset 3px 0 0 var(--green,#3fb950)}
+#findPanel .fp-mk{background:var(--green,#3fb950);color:var(--sidebar-background);border-radius:2px;padding:0 2px}
+#findPanel .fp-foot{padding:.55rem 1rem;border-top:1px solid var(--main-background);color:var(--gray);font-size:.78rem;line-height:1.35}
