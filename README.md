@@ -43,6 +43,10 @@ an outline. It replaces the browser's own find while gamja has focus.
 
 **Command history ↑/↓** in the composer, shell style (deduplicated, capped at 200 entries).
 
+**Readable `/help`** — gamja renders the help dialog as `<dt>`/`<dd>` pairs but never styles them,
+so every command comes out looking exactly like its own description. Commands now sit on a chip and
+descriptions are dimmed. It also fixes gamja's `<kbd>` chips, which are unreadable here (see below).
+
 **Forced dark theme** with self-hosted JetBrains Mono.
 
 ## Install
@@ -150,6 +154,14 @@ Unrelated to these customizations — they fix actual gamja defects:
   MutationObserver: nodes appended inside preact's tree get removed on the next re-render.
 - Sidebar hrefs do not carry the network, so on a multi-network bouncer the same `#channel` present
   on two networks gets pinned on both.
+- The `/help` styling derives its cues from `currentColor` rather than the theme variables, so
+  commands stay distinguishable under any color combination — including one where the accent and the
+  text color are set to the same value.
+- ⚠️ **gamja bug worth knowing about if you force a theme:** `kbd` gets a light chip
+  (`background:#f0f0f0`) that is only corrected inside `@media (prefers-color-scheme: dark)`. Since
+  the dark theme here is forced regardless of the system setting, running the OS in *light* mode
+  leaves pale text on a pale chip and the key bindings in `/help` vanish. `custom.css` overrides
+  `kbd` with a chip derived from `currentColor`, which does not depend on the system theme at all.
 - CSP-safe: no inline styles or scripts, colors are applied through the CSSOM.
 - **Mobile is not supported.** It was attempted and abandoned: on iPhone Safari, elements appended to
   `<body>` outside preact's tree only ever receive `pointerdown`, never `click`/`touchend`, which

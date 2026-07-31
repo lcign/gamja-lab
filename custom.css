@@ -146,3 +146,40 @@ html{font-size:calc(16px * var(--fs,1))}
 #findPanel .fp-row.sel{background:var(--main-background);box-shadow:inset 3px 0 0 var(--green,#3fb950)}
 #findPanel .fp-mk{background:var(--green,#3fb950);color:var(--sidebar-background);border-radius:2px;padding:0 2px}
 #findPanel .fp-foot{padding:.55rem 1rem;border-top:1px solid var(--main-background);color:var(--gray);font-size:.78rem;line-height:1.35}
+
+/* ===== /help: tell the command apart from its description =====
+   gamja's markup is already right — <dt><code><strong>/name</strong> usage</code></dt>
+   <dd>description</dd> — but it is never styled, so command and text come out identical.
+   ⚠️ Both cues are derived from `currentColor`, NOT from the theme variables, so the distinction
+   survives any color combination picked in the Extra panel, including the ones where the accent
+   and the text color are the same. The command keeps full strength on a chip derived from the text
+   itself; the description is slightly dimmed and indented. */
+.dialog .dialog-body dl{margin:0}
+.dialog .dialog-body dt{margin:.55em 0 .1em}
+.dialog .dialog-body dt code,
+.dialog .dialog-body dt strong{font-family:inherit}
+.dialog .dialog-body dt code{
+	background:color-mix(in srgb, currentColor 13%, transparent);
+	border:1px solid color-mix(in srgb, currentColor 22%, transparent);
+	border-radius:5px;padding:.08em .4em;display:inline-block;line-height:1.4}
+.dialog .dialog-body dt strong{font-weight:700}
+.dialog .dialog-body dd{margin:0 0 0 .9em;opacity:.72;line-height:1.45}
+/* key bindings use <dt><strong>…</strong></dt> with no <code>: same chip */
+.dialog .dialog-body dt > strong:only-child{
+	background:color-mix(in srgb, currentColor 13%, transparent);
+	border:1px solid color-mix(in srgb, currentColor 22%, transparent);
+	border-radius:5px;padding:.08em .4em;display:inline-block;line-height:1.4;font-weight:700}
+
+/* ===== <kbd> in the key bindings: readable in every case =====
+   ⚠️ This is a gamja bug, not one of ours. Its light chip `kbd{background:#f0f0f0}` is only
+   corrected inside `@media (prefers-color-scheme: dark)`. These customizations force the dark theme
+   regardless of the system setting, so with the OS in LIGHT mode that media query never matches and
+   you get pale text on a pale chip: the shortcuts in /help become unreadable.
+   Deriving the chip from `currentColor` makes it independent of both the system theme and the
+   colors picked in the Extra panel. */
+kbd{
+	background:color-mix(in srgb, currentColor 14%, transparent);
+	border:1px solid color-mix(in srgb, currentColor 32%, transparent);
+	box-shadow:none;color:inherit;
+	font-family:inherit;font-size:.85em;line-height:1.4;
+	padding:.1em .45em;margin:0 2px;border-radius:4px}
