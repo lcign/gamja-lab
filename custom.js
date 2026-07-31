@@ -53,6 +53,7 @@
 		['Background',              '--main-background',    '#212529',   GM],
 		['Text',                    '--main-color',         '#f8f9fa',   GM],
 		['Links',                   '--link-color',         '#53b266',   GM],
+		['Timestamp',               '--timestamp-color',    '#979797',   GM],
 
 		['Buttons',                 '--button-background',  '#282879',   GO],
 		['Alert (errors, offline)', '--red',                '#fb615b',   GO]

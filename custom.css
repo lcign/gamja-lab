@@ -222,4 +222,10 @@ kbd{
    inside `@media (prefers-color-scheme: dark)`, so with the dark theme forced and the OS in LIGHT
    mode links lost the theme color entirely. This rule is unconditional.
    `:not(.nick)` is required: nicknames are also <a> inside #buffer and carry their own colors. */
-#buffer a:not(.nick){color:var(--link-color, var(--green))}
+#buffer a:not(.nick):not(.timestamp){color:var(--link-color, var(--green))}
+
+/* ⚠️ The message timestamp is an <a> as well (`a.timestamp`, painted with `--gray` by gamja), and
+   the link rule above carries an id, so it won: changing the link color changed the timestamp too.
+   It has to be excluded explicitly, like nicknames — and while at it, it gets a variable of its
+   own, falling back to `--gray`. */
+#buffer a.timestamp{color:var(--timestamp-color, var(--gray))}

@@ -33,8 +33,9 @@ full-width placement for free.
   Beyond what gamja exposes: `--bl-background` / `--bl-color` (background and text of the left
   channel list *only*, which gamja otherwise shares with the member list through
   `--sidebar-background`), `--bl-active-bg` / `--bl-active-color` (the selected channel,
-  **hardcoded** to `#fff` in gamja), and `--link-color` for links in messages — gamja paints those
-  with `--green`, the very same variable as unread, so the two could never be set apart.
+  **hardcoded** to `#fff` in gamja), `--link-color` for links in messages — gamja paints those with
+  `--green`, the very same variable as unread, so the two could never be set apart — and
+  `--timestamp-color` for the time next to each message.
   `--green` is left with what it actually still drives, operators and online status, and `--red`
   is *Alert*.
 
@@ -208,8 +209,9 @@ Unrelated to these customizations — they fix actual gamja defects:
 - ⚠️ **Third member of the `kbd` family**: `a{color:var(--green)}` is also declared only inside
   `@media (prefers-color-scheme: dark)`, so with the dark theme forced and the OS in *light* mode
   links lost the theme color. The `--link-color` rule is unconditional and fixes that too. It is
-  written as `#buffer a:not(.nick)` on purpose: nicknames are `<a>` inside `#buffer` as well, and an
-  id selector would have overridden their own colors.
+  written as `#buffer a:not(.nick):not(.timestamp)` on purpose: nicknames **and timestamps** are
+  `<a>` inside `#buffer` as well (`a.nick`, `a.timestamp`), and an id selector overrides the colors
+  gamja gives them. Miss one and setting the link color silently repaints it.
 - CSP-safe: no inline styles or scripts, colors are applied through the CSSOM.
 - **Mobile is not supported.** It was attempted and abandoned: on iPhone Safari, elements appended to
   `<body>` outside preact's tree only ever receive `pointerdown`, never `click`/`touchend`, which
