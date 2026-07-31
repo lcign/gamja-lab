@@ -47,6 +47,17 @@ an outline. It replaces the browser's own find while gamja has focus.
 so every command comes out looking exactly like its own description. Commands now sit on a chip and
 descriptions are dimmed. It also fixes gamja's `<kbd>` chips, which are unreadable here (see below).
 
+**Working shortcuts on macOS** — gamja binds its shortcuts to `event.key`, but Option+letter on
+macOS produces a composed character (`Option+h` is `˙`), so Alt+h and Alt+a simply do nothing there.
+The physical key is read from `event.code` and the event is re-emitted with the right letter, so
+gamja's own handler still does the work. `Option+k` is accepted as well for the buffer switcher,
+which gamja binds to Ctrl — handy because macOS already claims Ctrl+K inside a text field. The
+`/help` dialog shows the Mac symbols (`⌥`, `⌃`) next to the Windows names.
+
+**Alt+↑/↓ follows the order you see** — with channels pinned, gamja's own navigation skips them as a
+block, because it walks the internal buffer Map while pinning only reorders the view. Navigation is
+redone on the visible order.
+
 **Forced dark theme** with self-hosted JetBrains Mono.
 
 ## Install
@@ -162,6 +173,12 @@ Unrelated to these customizations — they fix actual gamja defects:
   the dark theme here is forced regardless of the system setting, running the OS in *light* mode
   leaves pale text on a pale chip and the key bindings in `/help` vanish. `custom.css` overrides
   `kbd` with a chip derived from `currentColor`, which does not depend on the system theme at all.
+- Only the Option+letter combinations gamja actually binds are translated on macOS. Translating
+  every one of them would break typing special characters (`Option+a` for `å`) in the composer, so
+  the table has to be kept in sync if gamja gains a new Alt+letter shortcut.
+- The Alt+↑/↓ override is a capture listener on `window`, which runs before gamja's bubble listener
+  on the same target and stops it with `stopPropagation()` — otherwise both would move and the
+  buffer would jump twice.
 - CSP-safe: no inline styles or scripts, colors are applied through the CSSOM.
 - **Mobile is not supported.** It was attempted and abandoned: on iPhone Safari, elements appended to
   `<body>` outside preact's tree only ever receive `pointerdown`, never `click`/`touchend`, which

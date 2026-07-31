@@ -533,3 +533,131 @@
 		if (e.key === 'Enter')     { e.preventDefault(); jump(); return; }
 	}, true);
 })();
+
+/* ===================== Alt shortcuts on macOS =====================
+   ⚠️ gamja binds its shortcuts to `event.key` (`window.addEventListener("keydown")`, then
+   `t[s.key]`). On macOS, Option+letter does NOT produce the letter but a composed character —
+   Option+h gives "˙", Option+a gives "å" — so the lookup fails and Alt+h / Alt+a do nothing at
+   all. They work on Windows and Linux; this is a macOS-only problem.
+
+   `event.code` keeps the PHYSICAL key, so it is enough to re-emit the event with the right letter
+   and let gamja's own handler do the rest: no bundle patch, no duplicated logic.
+
+   ⚠️ Only the letters gamja actually binds are translated. Translating every Option+letter would
+   break typing special characters (Option+a for "å" and friends) in the composer. If gamja ever
+   adds an Alt+letter shortcut, add it here too. */
+(function () {
+	// Mirrors gamja's table. `k` is the special case: gamja binds it to CTRL, not Alt, and on macOS
+	// Ctrl+K inside a text field is already taken by the system (kill to end of line, an emacs
+	// inheritance). So Option+k is translated into Ctrl+k.
+	var BOUND = { h: { altKey: true }, a: { altKey: true }, k: { ctrlKey: true } };
+	var isMac = /Mac|iP(hone|ad|od)/.test(navigator.platform || navigator.userAgent || '');
+	if (!isMac) return;
+
+	window.addEventListener('keydown', function (e) {
+		if (!e.isTrusted || !e.altKey || e.metaKey || e.ctrlKey) return;   // isTrusted: no recursion
+		var m = /^Key([A-Z])$/.exec(e.code || '');
+		if (!m) return;
+		var letter = m[1].toLowerCase(), b = BOUND[letter];
+		if (!b) return;
+		if (b.altKey && (e.key === letter || e.key === m[1])) return;      // already right: leave it
+		var ev;
+		try {
+			ev = new KeyboardEvent('keydown', {
+				key: letter, code: e.code,
+				altKey: !!b.altKey, ctrlKey: !!b.ctrlKey,
+				bubbles: true, cancelable: true
+			});
+		} catch (err) { return; }
+		e.preventDefault();            // without this macOS still inserts the composed character
+		window.dispatchEvent(ev);      // gamja's handler is on window, so this reaches it
+	}, true);
+})();
+
+/* ===================== /help: Mac symbol next to the Windows name =====================
+   Shortcuts are rendered as <dt><kbd>Alt</kbd> + <kbd>h</kbd></dt>: every modifier is its own
+   <kbd> with an exact label. CSS cannot select on text content, so this needs JS — but it only
+   rewrites the text of the modifiers, without adding or removing nodes.
+
+   ⚠️ This is inside preact's tree: a re-render of the dialog restores the original label. That is
+   fine (it is cosmetic, and it reapplies the next time the dialog opens) and it is exactly why no
+   elements are added — preact removes those, whereas text can simply be rewritten.
+
+   No timer at rest and no observer: it only looks after a click or after a `/help`, the two ways
+   that dialog can open, and returns immediately when there is nothing to do. */
+(function () {
+	var SYM = { Alt: '⌥', Ctrl: '⌃', Shift: '⇧' };
+	var isMac = /Mac|iP(hone|ad|od)/.test(navigator.platform || navigator.userAgent || '');
+
+	// The CTRL-bound shortcut can also be pressed with Option on macOS (see the shortcuts block),
+	// so the chip has to say so, otherwise the alias exists and nobody knows about it. The row is
+	// checked to be the `k` one, so this holds if gamja ever adds other shortcuts.
+	function alias(k, t) {
+		if (!isMac || t !== 'Ctrl') return '';
+		var dt = k.parentNode, sib = dt ? dt.querySelectorAll('kbd') : [], i;
+		for (i = 0; i < sib.length; i++)
+			if (sib[i] !== k && (sib[i].textContent || '').trim() === 'k') return ' / ⌥';
+		return '';
+	}
+
+	function decorate() {
+		var dl = document.querySelector('.dialog .dialog-body dl');
+		if (!dl) return;
+		var ks = dl.querySelectorAll('dt kbd'), i;
+		for (i = 0; i < ks.length; i++) {
+			var k = ks[i], t = (k.textContent || '').trim();
+			if (k.getAttribute('data-sym') || !SYM[t]) continue;
+			k.setAttribute('data-sym', '1');
+			k.textContent = t + ' ' + SYM[t] + alias(k, t);
+		}
+	}
+	function soon() { setTimeout(decorate, 0); setTimeout(decorate, 60); setTimeout(decorate, 200); }
+
+	document.addEventListener('click', soon, true);
+	document.addEventListener('keydown', function (e) {
+		if (e.key !== 'Enter') return;
+		var t = e.target;
+		if (!t || t.name !== 'text' || !t.closest || !t.closest('#composer')) return;
+		if (/^\/help\b/i.test((t.value || '').trim())) soon();
+	}, true);
+})();
+
+/* ===================== Alt+arrows: follow the order you can see =====================
+   ⚠️ Pinned channels were SKIPPED AS A BLOCK. That is not a flaw in the pinning: gamja navigates
+   `Array.from(state.buffers.values())`, the internal order of its Map, while pinning only reorders
+   the view by writing `style.order` onto the <li> elements. Eye and shortcut followed two
+   different orders.
+
+   Navigation is redone here on the VISIBLE order: sort the <li> by `style.order` (ties broken by
+   DOM order), find the active one and move to the previous/next, wrapping around as gamja does.
+
+   ⚠️ gamja's handler is a BUBBLE listener on window; this one is a CAPTURE listener, also on
+   window, so it runs first and `stopPropagation()` keeps gamja's from firing. Without that both
+   would move and the buffer would jump twice. */
+(function () {
+	function visualOrder() {
+		var ul = document.querySelector('#buffer-list ul');
+		if (!ul) return [];
+		var out = [], i;
+		for (i = 0; i < ul.children.length; i++) {
+			var li = ul.children[i];
+			out.push({ li: li, o: parseInt(li.style.order, 10) || 0, i: i });
+		}
+		out.sort(function (a, b) { return a.o - b.o || a.i - b.i; });
+		return out;
+	}
+	window.addEventListener('keydown', function (e) {
+		if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+		if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+		var list = visualOrder();
+		if (list.length < 2) return;                       // nothing to cycle: let gamja handle it
+		var at = -1, i;
+		for (i = 0; i < list.length; i++) if (list[i].li.classList.contains('active')) { at = i; break; }
+		if (at < 0) return;
+		e.preventDefault(); e.stopPropagation();           // gamja must not move as well
+		var step = e.key === 'ArrowUp' ? -1 : 1;
+		var next = list[(at + step + list.length) % list.length].li;
+		var a = next.firstElementChild;
+		if (a && a.click) a.click();
+	}, true);
+})();
