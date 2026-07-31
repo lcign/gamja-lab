@@ -32,21 +32,30 @@
 			'hue-rotate(' + dh + 'deg) saturate(' + sat + ') brightness(' + (0.7 + cur.l * 0.6).toFixed(2) + ')');
 	}
 
+	var GL = 'Channel list (left)', GR = 'Member list (right)', GM = 'Messages', GO = 'Other';
+	/* Fourth field = group, rendered as a heading in the panel. Order matters, and the groups follow
+	   WHERE the color shows up rather than what the variable is called: that was the flaw of the
+	   flat list, where "Side panels" and "Channel list background" looked like the same thing.
+	   ⚠️ VARS order must match the controls in the DOM: Reset realigns them by index. */
 	var VARS = [
-		['Background',              '--main-background',    '#212529'],
-		['Text',                    '--main-color',         '#f8f9fa'],
-		['Side panels',             '--sidebar-background', '#131618'],
-		['Channel list background', '--bl-background',      '#131618'],
-		['Channel list text',       '--bl-color',           '#f8f9fa'],
-		['Active channel background','--bl-active-bg',      '#ffffff'],
-		['Active channel text',     '--bl-active-color',    '#131618'],
-		['Buttons',                 '--button-background',  '#282879'],
-		['Accent (links, unread)',  '--green',              '#53b266'],
-		['Alert (errors, offline)', '--red',                '#fb615b'],
-		['Mention text',            '--highlight-color',    '#ffe08a'],
-		['Mention background',      '--highlight-bg',       '#463a10'],
-		['Channel activity',        '--activity-color',     '#d9a441'],
-		['Pin 📌',                  '--pin-color',          PIN_DEFAULT]
+		['Background',              '--bl-background',      '#131618',   GL],
+		['Text',                    '--bl-color',           '#f8f9fa',   GL],
+		['Active channel back.',    '--bl-active-bg',       '#ffffff',   GL],
+		['Active channel text',     '--bl-active-color',    '#131618',   GL],
+		['Channel activity',        '--activity-color',     '#d9a441',   GL],
+		['Mention text',            '--highlight-color',    '#ffe08a',   GL],
+		['Mention background',      '--highlight-bg',       '#463a10',   GL],
+		['Pin 📌',                  '--pin-color',          PIN_DEFAULT, GL],
+
+		['Background',              '--sidebar-background', '#131618',   GR],
+		['Operators, online',       '--green',              '#53b266',   GR],
+
+		['Background',              '--main-background',    '#212529',   GM],
+		['Text',                    '--main-color',         '#f8f9fa',   GM],
+		['Links',                   '--link-color',         '#53b266',   GM],
+
+		['Buttons',                 '--button-background',  '#282879',   GO],
+		['Alert (errors, offline)', '--red',                '#fb615b',   GO]
 	];
 	var KEY = 'gamja_theme';
 	var root = document.documentElement;
@@ -117,9 +126,14 @@
 		// before the colors. If nobody listens, nothing happens.
 		document.dispatchEvent(new CustomEvent('gamja-extra-panel', { detail: { panel: panel } }));
 
-		var csep = document.createElement('div'); csep.className = 'tp-sec'; csep.textContent = 'Colors';
-		panel.appendChild(csep);
+		var lastGroup = null;
 		VARS.forEach(function (v) {
+			if (v[3] !== lastGroup) {          // intestazione di gruppo, a riga intera nella griglia
+				lastGroup = v[3];
+				var sec = document.createElement('div');
+				sec.className = 'tp-sec'; sec.textContent = v[3];
+				panel.appendChild(sec);
+			}
 			var row = document.createElement('label'); row.className = 'tp-row';
 			var span = document.createElement('span'); span.textContent = v[0];
 			var inp = document.createElement('input'); inp.type = 'color'; inp.value = saved[v[1]] || v[2];

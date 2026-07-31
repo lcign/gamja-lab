@@ -22,13 +22,21 @@ Desktop only.
 - **text zoom** A−/A+ (0.3× → 1.8×), applied through the `--fs` CSS variable
 - **max rows in the `/list` dialog** (default 2000, range 100–50000) with a warning above 5000
 - **unread dot**: a dot next to channels with activity or a mention, on by default
-- **theme colors**: background, text, side panels, buttons, mentions, channel activity — plus a few
-  things gamja does not expose:
-  `--bl-background` / `--bl-color` (background and text of the left channel list *only*, which gamja
-  otherwise shares with the member list through `--sidebar-background`) and
-  `--bl-active-bg` / `--bl-active-color` (the selected channel, **hardcoded** to `#fff` in gamja).
-  `--green` and `--red` are relabelled *Accent* and *Alert*, because that is what they actually
-  drive: links / unread / operators / online for the first, errors and offline status for the second.
+
+The panel is two columns wide: fourteen colors in a single column turned it into a very tall strip.
+The grid sits on the panel itself, so blocks that add their own rows through `gamja-extra-panel` get
+full-width placement for free.
+- **theme colors**, grouped by **where you see them** rather than by what the variable is called —
+  *Channel list (left)*, *Member list (right)*, *Messages*, *Other*. The flat list used to put
+  *Side panels* right next to *Channel list background* as if they were the same thing.
+
+  Beyond what gamja exposes: `--bl-background` / `--bl-color` (background and text of the left
+  channel list *only*, which gamja otherwise shares with the member list through
+  `--sidebar-background`), `--bl-active-bg` / `--bl-active-color` (the selected channel,
+  **hardcoded** to `#fff` in gamja), and `--link-color` for links in messages — gamja paints those
+  with `--green`, the very same variable as unread, so the two could never be set apart.
+  `--green` is left with what it actually still drives, operators and online status, and `--red`
+  is *Alert*.
 
 <img src="extra-panel.png" alt="The Extra panel" width="330">
 
@@ -194,6 +202,14 @@ Unrelated to these customizations — they fix actual gamja defects:
   unconditionally.
 - Blocks that live outside the panel's closure add their rows through two events, `gamja-extra-panel`
   and `gamja-extra-reset`. If nothing listens, nothing happens.
+- ⚠️ **`--activity-color` was a dead variable in gamja**: declared, offered as *Channel activity*,
+  and used by nothing at all — the color picker did nothing. It now drives a channel with activity in
+  the left list, falling back to `--green`, so the look is unchanged until you touch it.
+- ⚠️ **Third member of the `kbd` family**: `a{color:var(--green)}` is also declared only inside
+  `@media (prefers-color-scheme: dark)`, so with the dark theme forced and the OS in *light* mode
+  links lost the theme color. The `--link-color` rule is unconditional and fixes that too. It is
+  written as `#buffer a:not(.nick)` on purpose: nicknames are `<a>` inside `#buffer` as well, and an
+  id selector would have overridden their own colors.
 - CSP-safe: no inline styles or scripts, colors are applied through the CSSOM.
 - **Mobile is not supported.** It was attempted and abandoned: on iPhone Safari, elements appended to
   `<body>` outside preact's tree only ever receive `pointerdown`, never `click`/`touchend`, which

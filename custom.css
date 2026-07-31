@@ -55,9 +55,20 @@ html{font-size:calc(16px * var(--fs,1))}
 .colors-btn{margin-left:0}
 #themeBackdrop{position:fixed;inset:0;z-index:10021;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
 #themeBackdrop.hidden{display:none}
+/* TWO-COLUMN panel: there are fourteen colors, and in a single column the panel turned into a
+   very tall strip. The grid lives on the panel itself, so no extra container is needed in the JS:
+   the color rows (`.tp-row`) flow into two columns and everything else spans the full width.
+   Below 560px (phones) it goes back to a single column. */
 #themePanel{background:var(--sidebar-background);color:var(--main-color);border:1px solid var(--expander-border);
-	border-radius:10px;padding:12px;width:265px;max-width:92vw;box-sizing:border-box;
-	box-shadow:0 10px 40px rgba(0,0,0,.5)}
+	border-radius:10px;padding:12px;width:480px;max-width:92vw;box-sizing:border-box;
+	box-shadow:0 10px 40px rgba(0,0,0,.5);
+	display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
+#themePanel > .tp-head,
+#themePanel > .tp-zoom,
+#themePanel > .tp-warn,
+#themePanel > .tp-sec,
+#themePanel > .tp-reset{grid-column:1 / -1}
+@media(max-width:560px){#themePanel{width:265px;grid-template-columns:1fr}}
 #themePanel .tp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #themePanel .tp-close{background:none;border:none;color:var(--main-color);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px}
 #themePanel .tp-h{font-weight:700;font-size:13px}
@@ -198,4 +209,17 @@ kbd{
    declared inside `@media (prefers-color-scheme: dark)`. The dark theme here is forced regardless
    of the system setting, so with the OS in LIGHT mode a hardcoded orange (#b37400) was used and the
    panel's "Accent" entry had no effect on the channel list. */
-#buffer-list li.unread-message > a{color:var(--green)}
+/* ⚠️ `--activity-color` was a DEAD variable: declared, exposed in the panel and used by nobody, so
+   the "Channel activity" control did nothing at all. Here it finally gets its effect — a channel
+   with activity in the left list — falling back to `--green`. */
+#buffer-list li.unread-message > a{color:var(--activity-color, var(--green))}
+
+/* ===== color of links in messages =====
+   ⚠️ In gamja links use `--green`, the SAME variable as unread: changing the accent also changed
+   the links, with no way to separate them. Here they get their own variable, falling back to
+   `--green`, so until the panel entry is touched the look is exactly as before.
+   ⚠️ And this is the third of the `kbd` family: gamja's `a{color:var(--green)}` is only declared
+   inside `@media (prefers-color-scheme: dark)`, so with the dark theme forced and the OS in LIGHT
+   mode links lost the theme color entirely. This rule is unconditional.
+   `:not(.nick)` is required: nicknames are also <a> inside #buffer and carry their own colors. */
+#buffer a:not(.nick){color:var(--link-color, var(--green))}
