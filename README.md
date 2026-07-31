@@ -12,8 +12,8 @@ Desktop only.
 
 ![gamja with these customizations](screenshot.png)
 
-*Pinned channels at the top of the list, the 📌 next to the user count, JetBrains Mono and the dark
-theme.*
+*Pinned channels at the top of the list, the 📌 next to the user count, unread dots on `##anime` and
+`#archlinux`, JetBrains Mono and the dark theme.*
 
 ## What it adds
 
@@ -29,6 +29,8 @@ theme.*
   `--bl-active-bg` / `--bl-active-color` (the selected channel, **hardcoded** to `#fff` in gamja).
   `--green` and `--red` are relabelled *Accent* and *Alert*, because that is what they actually
   drive: links / unread / operators / online for the first, errors and offline status for the second.
+
+<img src="extra-panel.png" alt="The Extra panel" width="330">
 
 **Channel pinning (senpai-style)** — a 📌 in the member list header, next to *N users*: pins the open
 channel and floats it to the top of the channel list, right below the bouncer row, with a 📌 in front
