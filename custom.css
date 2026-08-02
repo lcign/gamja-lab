@@ -144,6 +144,14 @@ html{font-size:calc(16px * var(--fs,1))}
    drawn by a color font, so it ignores `color` — same deal as the 📌. */
 #buffer-list li:first-child > a::before{content:var(--bnc-icon,"🐇");opacity:.9;font-size:.9em}
 
+/* grouped shared names: the network suffix and the caption above the group. Both are generated
+   content driven by attributes custom.js writes on the <li> — no nodes are inserted into the list,
+   which is preact's territory. */
+#buffer-list li[data-net] > a::after{content:attr(data-net);opacity:.5;font-size:.85em;
+	margin-left:.3em}
+#buffer-list li[data-shared-head]::before{content:"shared names";display:block;font-size:.72em;
+	letter-spacing:.08em;text-transform:uppercase;opacity:.45;padding:.55em 0 .1em .6em}
+
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js) */
 #buffer-list ul{display:flex;flex-direction:column}
 #buffer-list li[data-pin] > a::before{content:"📌";font-size:.8em;margin-right:.35em;opacity:.75;

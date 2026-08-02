@@ -89,6 +89,17 @@ which gamja binds to Ctrl — handy because macOS already claims Ctrl+K inside a
 block, because it walks the internal buffer Map while pinning only reorders the view. Navigation is
 redone on the visible order.
 
+**Grouping of shared channel names** (*Extra* panel, off by default) — `#linux` on two networks used
+to sit far apart in the list, indistinguishable. Switched on, every name present on more than one
+network is lifted out of its network and gathered right below the pinned block under a *shared names*
+caption, each row labelled `@network`. A pinned channel whose name is shared joins the group too — in
+the pinned block it would have been one of two identical-looking rows — and keeps its 📌.
+
+The network is not written anywhere on the `<li>`: it is derived from DOM order, by walking up to the
+network row that precedes the channel. Ordering reuses the pinning mechanism (`style.order` plus
+attributes preact does not manage), and the caption and the `@network` label are generated content,
+so **no node is inserted** into the list.
+
 **Row marks in the channel list** — networks get a `⚯` in front of the name and the bouncer row at
 the top gets a 🐇, so servers read as a different kind of row than channels at a glance. Both are
 swappable through the `--srv-icon` and `--bnc-icon` CSS variables. The network mark is a plain glyph

@@ -268,23 +268,93 @@
 	// fixed order:-1, because the bouncer row must stay first. `style.order` and `data-pin` are
 	// written onto the <li>: neither is a prop preact manages, so both survive re-renders
 	// (a `class` would be rewritten instead).
+	// Optional grouping of channel names that exist on more than one network: they are lifted out
+	// of their network and gathered right below the pinned block, each labelled with its network.
+	// Off by default, switched from the Extra panel.
+	var GKEY = 'gamja_group_shared';
+	function grouping() { try { return localStorage.getItem(GKEY) === '1'; } catch (e) { return false; } }
+
 	function markPinned() {
 		var ul = document.querySelector('#buffer-list ul');
 		if (!ul) return;
-		var lis = ul.children, head = null, pin = [], rest = [], i;
+		var lis = Array.prototype.slice.call(ul.children);
+		var group = grouping();
+		var head = null, pin = [], dupe = [], rest = [], meta = [], nets = {}, net = '', i, li, m, c;
+
+		// Pass 1: tie every channel row to the network row above it — the <li> carries no network of
+		// its own, only DOM order does — and count on how many networks each name shows up.
 		for (i = 0; i < lis.length; i++) {
-			var li = lis[i];
-			if (i === 0 && li.classList.contains('type-server')) { head = li; continue; }
-			var c = chanOf(li.firstElementChild);
-			if (c && has(c)) { li.setAttribute('data-pin', ''); pin.push(li); }
-			else { li.removeAttribute('data-pin'); rest.push(li); }
+			li = lis[i];
+			if (li.classList.contains('type-server')) {
+				if (i > 0) net = ((li.firstElementChild || {}).textContent || '').trim();
+				meta.push(null);
+				continue;
+			}
+			c = chanOf(li.firstElementChild);
+			if (!c) { meta.push(null); continue; }
+			var key = norm(c);
+			(nets[key] = nets[key] || {})[net] = 1;
+			meta.push({ name: key, net: net });
 		}
+
+		// Pass 2: fill the buckets. `rest` is filled in DOM order, so networks keep their channels
+		// underneath them; only the shared names are pulled away.
+		for (i = 0; i < lis.length; i++) {
+			li = lis[i]; m = meta[i];
+			if (i === 0 && li.classList.contains('type-server')) { head = li; continue; }
+			var pinned = m && has(m.name);
+			if (pinned) li.setAttribute('data-pin', ''); else li.removeAttribute('data-pin');
+			var shared = !!(group && m && Object.keys(nets[m.name]).length > 1);
+			if (shared && m.net) li.setAttribute('data-net', '@' + m.net); else li.removeAttribute('data-net');
+			li.removeAttribute('data-shared-head');
+			// a shared name goes to the group even when it is pinned: with the same name sitting on
+			// two networks, the pinned block would show two identical-looking rows. It keeps its 📌.
+			if (shared) dupe.push(li);
+			else if (pinned) pin.push(li);
+			else rest.push(li);
+		}
+
+		// same names next to each other, networks in a stable order underneath
+		dupe.sort(function (a, b) {
+			var na = norm(chanOf(a.firstElementChild)), nb = norm(chanOf(b.firstElementChild));
+			if (na !== nb) return na < nb ? -1 : 1;
+			var x = a.getAttribute('data-net') || '', y = b.getAttribute('data-net') || '';
+			return x < y ? -1 : x > y ? 1 : 0;
+		});
+		if (dupe.length) dupe[0].setAttribute('data-shared-head', '');
+
 		var k = 0;
 		function put(x) { var v = String(k++); if (x.style.order !== v) x.style.order = v; }
 		if (head) put(head);
 		pin.forEach(put);
+		dupe.forEach(put);
 		rest.forEach(put);
 	}
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.gs-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom gs-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Group shared channel names';
+		var chk = document.createElement('input');
+		chk.type = 'checkbox'; chk.checked = grouping(); chk.style.flex = 'none';
+		chk.title = 'Channels present on more than one network are gathered below the pinned ones, each labelled with its network';
+		chk.addEventListener('change', function () {
+			try { localStorage.setItem(GKEY, chk.checked ? '1' : '0'); } catch (e) {}
+			markPinned();
+		});
+		row.appendChild(lab); row.appendChild(chk);
+		panel.appendChild(row);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(GKEY); } catch (e) {}
+		var chk = document.querySelector('.gs-row input[type=checkbox]');
+		if (chk) chk.checked = false;
+		markPinned();
+	});
 
 	function injectPinButton() {
 		var head = document.getElementById('member-list-header');
