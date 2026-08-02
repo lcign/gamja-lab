@@ -189,9 +189,12 @@ html{font-size:calc(16px * var(--fs,1))}
    the list's max-content calculation and blew the sidebar width far past the longest name — which is
    why the empty space showed up only with grouping on. Out of flow it costs nothing; the row makes
    space for it with padding-top. */
-#buffer-list li[data-shared-head]{position:relative;padding-top:1.7em}
-#buffer-list li[data-shared-head]::before{content:"shared names";position:absolute;top:0;left:.6em;
-	font-size:.72em;letter-spacing:.08em;text-transform:uppercase;opacity:.45;white-space:nowrap}
+#buffer-list li[data-shared-head]{position:relative;padding-top:1.9em}
+/* the caption reads as a network row of its own: same size, same colour, same padding as one, with
+   its own mark in front (swappable through --shared-icon) instead of the networks' ⚯. */
+#buffer-list li[data-shared-head]::before{content:var(--shared-icon,"⧉") " shared names";
+	position:absolute;top:0;left:0;padding:2px 10px;white-space:nowrap;
+	color:var(--bl-color,var(--main-color))}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js).
    The width is pinned to the longest row: gamja sizes the column as `max-content` but leaves the
