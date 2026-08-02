@@ -871,6 +871,46 @@
 	}, true);
 })();
 
+/* ===================== nick length cap =====================
+   How many characters of a nick the member list shows before the ellipsis. Only a number is kept
+   here; the cut itself is done in CSS through the --nick-max variable. */
+(function () {
+	var KEY = 'gamja_nick_max', DEF = 15, MIN = 5, MAX = 60;
+	function get() { var v = parseInt(localStorage.getItem(KEY), 10); return v > 0 ? v : DEF; }
+	function set(x) {
+		var v = parseInt(x, 10); if (!(v > 0)) v = DEF;
+		v = v < MIN ? MIN : (v > MAX ? MAX : v);
+		try { localStorage.setItem(KEY, String(v)); } catch (e) {}
+		return v;
+	}
+	// +1 leaves room for the ellipsis itself, so the setting means "characters of the nick"
+	function apply() { document.documentElement.style.setProperty('--nick-max', String(get() + 1)); }
+	apply();
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.nm-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom nm-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Nick length in the member list';
+		var inp = document.createElement('input');
+		inp.type = 'number'; inp.className = 'tp-num';
+		inp.min = String(MIN); inp.max = String(MAX); inp.step = '1'; inp.value = String(get());
+		inp.title = 'Characters shown before the ellipsis. Raise it to ' + MAX + ' to stop cutting in practice.';
+		inp.addEventListener('change', function () { inp.value = String(set(inp.value)); apply(); });
+		row.appendChild(lab); row.appendChild(inp);
+		panel.appendChild(row);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(KEY); } catch (e) {}
+		apply();
+		var inp = document.querySelector('.nm-row input[type=number]');
+		if (inp) inp.value = String(DEF);
+	});
+})();
+
 /* ===================== unread dot =====================
    Pure CSS: this only flips an attribute on <html>, which the rule in custom.css uses as its
    switch. Nothing runs at rest — one localStorage read at load. */
