@@ -168,7 +168,7 @@ html{font-size:calc(16px * var(--fs,1))}
    ⚠️ On the left the strip is narrower AND the link's own 10px of left padding has to go: the two
    added up and left the name floating far from the dot. */
 :root[data-unread-dot][data-dot-left] #buffer-list li{padding-right:0;padding-left:1.6ch}
-:root[data-unread-dot][data-dot-left] #buffer-list li > a{padding-left:0}
+:root[data-unread-dot][data-dot-left] #buffer-list li > a{padding-left:3px}
 :root[data-unread-dot][data-dot-left] #buffer-list li.unread-message::after,
 :root[data-unread-dot][data-dot-left] #buffer-list li.unread-highlight::after{
 	right:auto;left:0;width:1.6ch}
