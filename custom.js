@@ -460,6 +460,10 @@
 			if (full.length > max) {
 				var cut = full.slice(0, max) + '…';
 				if (cur !== cut) { a.setAttribute('data-full', full); node.nodeValue = cut; }
+				// the whole nick has to stay readable somewhere: gamja's own title carries the realname
+				// and host, not necessarily the nick, so it is prepended (once) rather than replaced.
+				var tip = a.getAttribute('title') || '';
+				if (tip.indexOf(full) !== 0) a.setAttribute('title', full + (tip ? '\n' + tip : ''));
 			} else {
 				if (cur !== full) node.nodeValue = full;
 				a.removeAttribute('data-full');
