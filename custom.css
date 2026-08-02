@@ -180,7 +180,8 @@ html{font-size:calc(16px * var(--fs,1))}
 :root[data-unread-dot][data-dot-left] #buffer-list li.unread-message::after,
 :root[data-unread-dot][data-dot-left] #buffer-list li.unread-highlight::after{
 	right:auto;left:0;width:1.6ch}
-:root[data-unread-dot][data-dot-left] #buffer-list li[data-shared-head]::before{left:1.6ch;
+:root[data-unread-dot][data-dot-left] #buffer-list li[data-shared-head]::before,
+:root[data-unread-dot][data-dot-left] #buffer-list li[data-pm-head]::before{left:1.6ch;
 	padding-left:0}
 #buffer-list li.unread-message{color:var(--activity-color,var(--green))}
 #buffer-list li.unread-highlight{color:var(--highlight-color)}
@@ -216,17 +217,21 @@ html{font-size:calc(16px * var(--fs,1))}
    space for it with padding-top. */
 /* the caption takes exactly one row's height — same line-height and same padding as a channel row —
    so the rhythm of the list is untouched: no extra margins above or below. */
-#buffer-list li[data-shared-head]{position:relative;padding-top:calc(1.3em + 4px)}
+#buffer-list li[data-shared-head],
+#buffer-list li[data-pm-head]{position:relative;padding-top:calc(1.3em + 4px)}
 /* the caption reads as a network row of its own: same size, same colour, same padding as one, with
    its own mark in front (swappable through --shared-icon) instead of the networks' ⚯. */
 /* ⚠️ The caption has a background of its own on purpose: it lives in the padding of the first
    grouped row (it is that row's ::before), so selecting that channel painted the highlight behind
    the caption as well. Being positioned, the caption draws on top — an opaque background is all it
    takes, and the row keeps its full-width highlight. */
-#buffer-list li[data-shared-head]::before{content:var(--shared-icon,"⧉") " shared names";
+#buffer-list li[data-shared-head]::before,
+#buffer-list li[data-pm-head]::before{
 	position:absolute;top:0;left:0;right:0;padding:2px 10px;line-height:1.3;white-space:nowrap;
 	color:var(--bl-color,var(--main-color));
 	background-color:var(--bl-background,var(--sidebar-background))}
+#buffer-list li[data-shared-head]::before{content:var(--shared-icon,"⧉") " shared names"}
+#buffer-list li[data-pm-head]::before{content:var(--pm-icon,"✉") " private messages"}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js).
    The width is pinned to the longest row: gamja sizes the column as `max-content` but leaves the

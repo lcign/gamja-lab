@@ -92,6 +92,11 @@ which gamja binds to Ctrl — handy because macOS already claims Ctrl+K inside a
 block, because it walks the internal buffer Map while pinning only reorders the view. Navigation is
 redone on the visible order.
 
+**Private messages in their own block** — user buffers are always gathered right under the pinned
+channels and above the shared names, sorted by nick, under a *private messages* caption (`--pm-icon`).
+Scattered across their networks they were easy to lose; grouped, an incoming query is always in the
+same place.
+
 **Grouping of shared channel names** (*Extra* panel, off by default) — `#linux` on two networks used
 to sit far apart in the list, indistinguishable. Switched on, every name present on more than one
 network is lifted out of its network and gathered right below the pinned block under a *shared names*

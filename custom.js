@@ -263,6 +263,13 @@
 	}
 	function activeChannel() { return chanOf(document.querySelector('#buffer-list li.active > a')); }
 
+	// user buffers: gamja builds their href as `irc:///<nick>,isuser`, which is also why chanOf()
+	// deliberately returns null for them.
+	function isUser(a) {
+		var h = a ? (a.getAttribute('href') || '') : '';
+		return h.indexOf(',isuser') >= 0;
+	}
+
 	// senpai-style ordering: pinned channels go to the top of the WHOLE list, right below the
 	// first row (the bouncer), hence above the networks. This needs a computed order rather than a
 	// fixed order:-1, because the bouncer row must stay first. `style.order` and `data-pin` are
@@ -279,7 +286,7 @@
 		if (!ul) return;
 		var lis = Array.prototype.slice.call(ul.children);
 		var group = grouping();
-		var head = null, pin = [], dupe = [], rest = [], meta = [], nets = {}, net = '', i, li, m, c;
+		var head = null, pin = [], pm = [], dupe = [], rest = [], meta = [], nets = {}, net = '', i, li, m, c;
 
 		// Pass 1: tie every channel row to the network row above it — the <li> carries no network of
 		// its own, only DOM order does — and count on how many networks each name shows up.
@@ -317,10 +324,13 @@
 				if (a) a.removeAttribute('data-net');
 			}
 			li.removeAttribute('data-shared-head');
+			li.removeAttribute('data-pm-head');
 			// the pin wins: a pinned channel stays in the pinned block even when its name is shared,
 			// it just keeps the @network label so it is not confused with its twin, which stays in
-			// the group below.
+			// the group below. Private messages are always gathered on their own, right under the
+			// pinned block and above the shared names.
 			if (pinned) pin.push(li);
+			else if (isUser(li.firstElementChild)) pm.push(li);
 			else if (shared) dupe.push(li);
 			else rest.push(li);
 		}
@@ -334,10 +344,17 @@
 		});
 		if (dupe.length) dupe[0].setAttribute('data-shared-head', '');
 
+		pm.sort(function (a, b) {
+			var x = (a.textContent || '').trim().toLowerCase(), y = (b.textContent || '').trim().toLowerCase();
+			return x < y ? -1 : x > y ? 1 : 0;
+		});
+		if (pm.length) pm[0].setAttribute('data-pm-head', '');
+
 		var k = 0;
 		function put(x) { var v = String(k++); if (x.style.order !== v) x.style.order = v; }
 		if (head) put(head);
 		pin.forEach(put);
+		pm.forEach(put);
 		dupe.forEach(put);
 		rest.forEach(put);
 	}
