@@ -196,7 +196,10 @@ html{font-size:calc(16px * var(--fs,1))}
 @media (min-width:641px){
 	/* width from the longest row and nothing else; the cap is only a guard against one absurd name */
 	#buffer-list ul{width:max-content;flex:0 0 auto;max-width:34ch}
-	#buffer-list li > a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+	/* ⚠️ `display:block` is not cosmetic: gamja's links are `inline-block`, and `overflow:hidden` on
+	   an inline-block moves its baseline to the bottom edge, which grew the line box and spaced every
+	   row apart — pinned and plain rows included. Blockified, they are out of baseline alignment. */
+	#buffer-list li > a{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 #buffer-list li[data-pin] > a::before{content:"📌";font-size:.8em;margin-right:.35em;opacity:.75;
 	filter:var(--pin-filter,none);display:inline-block}
