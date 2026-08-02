@@ -10,6 +10,12 @@ below). Without it everything else still works and the dialog simply never opens
 
 Desktop only.
 
+**Tested against gamja `master` at commit [`cdf94d6`](https://codeberg.org/emersion/gamja/commit/cdf94d6)
+(2026-07-24).** Follow `master`, not the tags: the latest release, `v1.0.0-beta.11`, dates from
+2025-03-20 and is 54 commits behind. Note that these customizations hook gamja's DOM and CSS
+variables rather than a stable API, so a newer `master` may move things underneath them — the CSS
+variable names and the injection points are the parts most likely to drift.
+
 ![gamja with these customizations](screenshot.png)
 
 *Pinned channels at the top of the list, the 📌 next to the user count, unread dots on `##anime` and
