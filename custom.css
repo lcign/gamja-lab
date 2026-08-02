@@ -189,13 +189,13 @@ html{font-size:calc(16px * var(--fs,1))}
    the list's max-content calculation and blew the sidebar width far past the longest name — which is
    why the empty space showed up only with grouping on. Out of flow it costs nothing; the row makes
    space for it with padding-top. */
-/* room above the caption as well as below it: with only the padding it sat glued to the last pinned
-   channel, tighter than any row in the list. */
-#buffer-list li[data-shared-head]{position:relative;margin-top:.7em;padding-top:2em}
+/* the caption takes exactly one row's height — same line-height and same padding as a channel row —
+   so the rhythm of the list is untouched: no extra margins above or below. */
+#buffer-list li[data-shared-head]{position:relative;padding-top:calc(1.3em + 4px)}
 /* the caption reads as a network row of its own: same size, same colour, same padding as one, with
    its own mark in front (swappable through --shared-icon) instead of the networks' ⚯. */
 #buffer-list li[data-shared-head]::before{content:var(--shared-icon,"⧉") " shared names";
-	position:absolute;top:0;left:0;padding:2px 10px;white-space:nowrap;
+	position:absolute;top:0;left:0;padding:2px 10px;line-height:1.3;white-space:nowrap;
 	color:var(--bl-color,var(--main-color))}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js).
