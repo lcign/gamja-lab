@@ -955,6 +955,32 @@
 	}, true);
 })();
 
+/* ===================== copy as lines =====================
+   Copying a stretch of conversation came out as a single run of text. Rather than chase why the
+   browser flattens it, the copy is rebuilt here: every logline the selection touches contributes one
+   line. Only inside #buffer, only for multi-line selections — a single line is left to the browser,
+   so copying half a sentence still behaves normally. Note that a partially selected first or last
+   line is taken whole; that is the trade-off for getting the line breaks back. */
+(function () {
+	document.addEventListener('copy', function (ev) {
+		var sel = window.getSelection();
+		if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+		var buf = document.getElementById('buffer');
+		if (!buf || !buf.contains(sel.anchorNode) || !buf.contains(sel.focusNode)) return;
+
+		var range = sel.getRangeAt(0), lines = [], els = buf.querySelectorAll('.logline'), i, el;
+		for (i = 0; i < els.length; i++) {
+			el = els[i];
+			if (!range.intersectsNode(el)) continue;
+			var txt = (el.innerText || el.textContent || '').replace(/\s+$/, '');
+			if (txt) lines.push(txt);
+		}
+		if (lines.length < 2 || !ev.clipboardData) return;
+		ev.clipboardData.setData('text/plain', lines.join('\n'));
+		ev.preventDefault();
+	}, true);
+})();
+
 /* ===================== nick length cap =====================
    How many characters of a nick the member list shows before the ellipsis. Only a number is kept
    here; the cut itself is done in CSS through the --nick-max variable. */
