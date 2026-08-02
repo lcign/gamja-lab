@@ -27,7 +27,10 @@ variable names and the injection points are the parts most likely to drift.
 
 - **text zoom** A−/A+ (0.3× → 1.8×), applied through the `--fs` CSS variable
 - **max rows in the `/list` dialog** (default 2000, range 100–50000) with a warning above 5000
-- **unread dot**: a dot next to channels with activity or a mention, on by default
+- **unread dot**: a dot next to channels with activity or a mention, on by default, plus **which side
+  it sits on** — end of the row by default, or in front of the name. Either way every row reserves
+  the same strip for it, so the list keeps its alignment and the sidebar width does not change with
+  which channels are active
 
 The panel is two columns wide: fourteen colors in a single column turned it into a very tall strip.
 The grid sits on the panel itself, so blocks that add their own rows through `gamja-extra-panel` get

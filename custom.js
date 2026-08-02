@@ -876,10 +876,13 @@
    switch. Nothing runs at rest — one localStorage read at load. */
 (function () {
 	var KEY = 'gamja_unread_dot';
+	var SKEY = 'gamja_unread_dot_left';                            // side: right unless asked
 	function on() { return localStorage.getItem(KEY) !== '0'; }    // on unless explicitly refused
+	function left() { return localStorage.getItem(SKEY) === '1'; }
 	function apply() {
 		var r = document.documentElement;
 		if (on()) r.setAttribute('data-unread-dot', ''); else r.removeAttribute('data-unread-dot');
+		if (left()) r.setAttribute('data-dot-left', ''); else r.removeAttribute('data-dot-left');
 	}
 	apply();
 
@@ -898,11 +901,28 @@
 		});
 		row.appendChild(lab); row.appendChild(chk);
 		panel.appendChild(row);
+
+		// side of the dot, only meaningful while the dot itself is on
+		var srow = document.createElement('div');
+		srow.className = 'tp-zoom uds-row';
+		var slab = document.createElement('span');
+		slab.textContent = 'Unread dot on the left';
+		var schk = document.createElement('input');
+		schk.type = 'checkbox'; schk.checked = left(); schk.style.flex = 'none';
+		schk.title = 'Off: the dot sits at the end of the row (default). On: it goes in front of the name.';
+		schk.addEventListener('change', function () {
+			localStorage.setItem(SKEY, schk.checked ? '1' : '0');
+			apply();
+		});
+		srow.appendChild(slab); srow.appendChild(schk);
+		panel.appendChild(srow);
 	});
 
 	document.addEventListener('gamja-extra-reset', function () {
-		localStorage.removeItem(KEY); apply();
+		localStorage.removeItem(KEY); localStorage.removeItem(SKEY); apply();
 		var chk = document.querySelector('.ud-row input[type=checkbox]');
 		if (chk) chk.checked = true;
+		var schk = document.querySelector('.uds-row input[type=checkbox]');
+		if (schk) schk.checked = false;
 	});
 })();

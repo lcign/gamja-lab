@@ -161,6 +161,14 @@ html{font-size:calc(16px * var(--fs,1))}
 	line-height:1;font-size:1.15em}
 /* nothing on the row you are reading: it says nothing you cannot see */
 :root[data-unread-dot] #buffer-list li.active::after{content:none}
+/* ── dot in FRONT of the name (Extra → "Unread dot on the left") ──
+   The reserved strip simply swaps side, so the geometry stays identical and rows keep lining up
+   whether or not they have activity. The group caption follows the indent, otherwise it would start
+   to the left of every channel name. */
+:root[data-unread-dot][data-dot-left] #buffer-list li{padding-right:0;padding-left:2.2ch}
+:root[data-unread-dot][data-dot-left] #buffer-list li.unread-message::after,
+:root[data-unread-dot][data-dot-left] #buffer-list li.unread-highlight::after{right:auto;left:0}
+:root[data-unread-dot][data-dot-left] #buffer-list li[data-shared-head]::before{left:2.2ch}
 #buffer-list li.unread-message{color:var(--activity-color,var(--green))}
 #buffer-list li.unread-highlight{color:var(--highlight-color)}
 
