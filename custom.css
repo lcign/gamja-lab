@@ -44,11 +44,15 @@ html{font-size:calc(16px * var(--fs,1))}
 #composer input[type=text]{color:var(--main-color) !important}
 #composer input[type=text]::placeholder{color:var(--gray) !important}
 
-/* left channel list: the MENTION entry (unread-highlight) is a hardcoded blue in gamja;
-   la collego alle variabili Highlight del pannello (testo + sfondo) */
+/* left channel list: the MENTION entry (unread-highlight) is a hardcoded blue in gamja; here it is
+   wired to the panel's Highlight variables (text + background).
+   ⚠️ The background goes on the <li>, not on the link: the link stops at the end of the name — and on
+   a private message it stops at the nick cap — so painted there the highlight covered only part of
+   the row. */
+#buffer-list li.unread-highlight{background-color:var(--highlight-bg)}
 #buffer-list li.unread-highlight > a{
 	color:var(--highlight-color) !important;
-	background-color:var(--highlight-bg) !important;
+	background-color:transparent !important;
 }
 
 /* --- "Extra" panel (custom.js) --- */
