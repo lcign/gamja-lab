@@ -158,7 +158,10 @@ html{font-size:calc(16px * var(--fs,1))}
    is what makes it follow Accent and Mention. The selection background moves onto the <li> too,
    otherwise it would stop before the strip. */
 #buffer-list li{position:relative;padding-right:2.2ch}
-#buffer-list li.active{background-color:var(--bl-active-bg,#fff)}
+/* `background-clip:content-box` matters: the caption of the shared group lives in the padding of the
+   first grouped row (it is that row's ::before), so a background over the whole box highlighted the
+   caption together with the channel. Clipped to the content box it stops at the row itself. */
+#buffer-list li.active{background-color:var(--bl-active-bg,#fff);background-clip:content-box}
 #buffer-list li.active > a{background-color:transparent}
 :root[data-unread-dot] #buffer-list li.unread-message > a::after,
 :root[data-unread-dot] #buffer-list li.unread-highlight > a::after{content:none}
