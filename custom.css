@@ -158,10 +158,8 @@ html{font-size:calc(16px * var(--fs,1))}
    is what makes it follow Accent and Mention. The selection background moves onto the <li> too,
    otherwise it would stop before the strip. */
 #buffer-list li{position:relative;padding-right:2.2ch}
-/* `background-clip:content-box` matters: the caption of the shared group lives in the padding of the
-   first grouped row (it is that row's ::before), so a background over the whole box highlighted the
-   caption together with the channel. Clipped to the content box it stops at the row itself. */
-#buffer-list li.active{background-color:var(--bl-active-bg,#fff);background-clip:content-box}
+/* full width, dot strip included */
+#buffer-list li.active{background-color:var(--bl-active-bg,#fff)}
 #buffer-list li.active > a{background-color:transparent}
 :root[data-unread-dot] #buffer-list li.unread-message > a::after,
 :root[data-unread-dot] #buffer-list li.unread-highlight > a::after{content:none}
@@ -221,9 +219,14 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer-list li[data-shared-head]{position:relative;padding-top:calc(1.3em + 4px)}
 /* the caption reads as a network row of its own: same size, same colour, same padding as one, with
    its own mark in front (swappable through --shared-icon) instead of the networks' ⚯. */
+/* ⚠️ The caption has a background of its own on purpose: it lives in the padding of the first
+   grouped row (it is that row's ::before), so selecting that channel painted the highlight behind
+   the caption as well. Being positioned, the caption draws on top — an opaque background is all it
+   takes, and the row keeps its full-width highlight. */
 #buffer-list li[data-shared-head]::before{content:var(--shared-icon,"⧉") " shared names";
-	position:absolute;top:0;left:0;padding:2px 10px;line-height:1.3;white-space:nowrap;
-	color:var(--bl-color,var(--main-color))}
+	position:absolute;top:0;left:0;right:0;padding:2px 10px;line-height:1.3;white-space:nowrap;
+	color:var(--bl-color,var(--main-color));
+	background-color:var(--bl-background,var(--sidebar-background))}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js).
    The width is pinned to the longest row: gamja sizes the column as `max-content` but leaves the
