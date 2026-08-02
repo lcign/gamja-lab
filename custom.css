@@ -151,33 +151,40 @@ html{font-size:calc(16px * var(--fs,1))}
    one ::after — the dot would win and the network would vanish exactly when the channel has
    activity. It goes on the <li> instead, which turns into a flex row so the label sits right after
    the name (`#linux` `@libera`) instead of on a line of its own. */
-#buffer-list li[data-net]{display:flex;align-items:baseline;flex-wrap:wrap;padding-right:1ch}
+#buffer-list li[data-net]{display:flex;align-items:baseline;flex-wrap:nowrap;padding-right:2.2ch;
+	position:relative}
 
 /* selection has to cover the whole row, label included: gamja paints it on the <a>, which here no
    longer spans the row, so for these rows it moves onto the <li> and the label follows its color */
 #buffer-list li[data-net].active{background-color:var(--bl-active-bg,#fff)}
 #buffer-list li[data-net].active > a{background-color:transparent}
 #buffer-list li[data-net].active::after{color:var(--bl-active-color,var(--sidebar-background))}
-/* the unread dot is `float:right` inside the link, which on these rows only wraps the name, so it
-   stopped mid-row. Anchoring it to the row's right edge left a huge gap after short names, so the
-   dot is
-   folded into the label itself: the network suffix and the dot are one piece of generated content,
-   `@libera •`, which also fixes the ordering — the dot lives on `a::after`, and the link comes
-   BEFORE the label, so on its own it would have landed on the wrong side. */
+/* the dot stays where it is on every other row — the right edge — which works here now that the
+   list is only as wide as its longest name. It keeps living on `a::after`, inside the link, so it
+   inherits the link's colour and follows Accent and Mention on its own; it is positioned against
+   the <li> and the row reserves 2.2ch on the right for it. */
 :root[data-unread-dot] #buffer-list li[data-net].unread-message > a::after,
-:root[data-unread-dot] #buffer-list li[data-net].unread-highlight > a::after{content:none}
-:root[data-unread-dot] #buffer-list li[data-net].unread-message::after,
-:root[data-unread-dot] #buffer-list li[data-net].unread-highlight::after{content:attr(data-net) " •";
-	opacity:.85}
-/* …and nothing on the row you are reading, as everywhere else */
-:root[data-unread-dot] #buffer-list li[data-net].active::after{content:attr(data-net)}
+:root[data-unread-dot] #buffer-list li[data-net].unread-highlight > a::after{
+	position:absolute;right:0;top:50%;transform:translateY(-50%);float:none;margin:0;
+	width:2.2ch;text-align:center;line-height:1}
+/* activity colours the WHOLE row: gamja paints only the link, which here stops at the name, leaving
+   the network label behind in the base colour — the row looked half highlighted. */
+#buffer-list li[data-net].unread-message{color:var(--activity-color,var(--green))}
+#buffer-list li[data-net].unread-highlight{color:var(--highlight-color)}
+#buffer-list li[data-net].unread-message::after,
+#buffer-list li[data-net].unread-highlight::after{opacity:.8}
 /* gamja gives the link `width:100%` and 10px of right padding: inside a flex row that pushes the
    label onto the next line and leaves a hole before it. Both have to go for these rows. */
 #buffer-list li[data-net] > a{flex:0 0 auto;width:auto;padding-right:0}
 /* joined to the name, no gap and no size change: the row has to read as one token, `#linux@Azzurra` */
 #buffer-list li[data-net]::after{content:attr(data-net);opacity:.55;margin-left:0}
-#buffer-list li[data-shared-head]::before{content:"shared names";flex-basis:100%;display:block;
-	font-size:.72em;letter-spacing:.08em;text-transform:uppercase;opacity:.45;padding:.55em 0 .1em .6em}
+/* ⚠️ THE caption is positioned, not a flex item: as an item with `flex-basis:100%` it took part in
+   the list's max-content calculation and blew the sidebar width far past the longest name — which is
+   why the empty space showed up only with grouping on. Out of flow it costs nothing; the row makes
+   space for it with padding-top. */
+#buffer-list li[data-shared-head]{position:relative;padding-top:1.7em}
+#buffer-list li[data-shared-head]::before{content:"shared names";position:absolute;top:0;left:.6em;
+	font-size:.72em;letter-spacing:.08em;text-transform:uppercase;opacity:.45;white-space:nowrap}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js).
    The width is pinned to the longest row: gamja sizes the column as `max-content` but leaves the
@@ -187,15 +194,9 @@ html{font-size:calc(16px * var(--fs,1))}
    to keep the list collapsed behind its expander. */
 #buffer-list ul{display:flex;flex-direction:column}
 @media (min-width:641px){
-	/* `max-content` alone still left the list wide: something in the list — not any of the real
-	   channel names, the longest of which is 23 characters — measures far more than it shows. Rather
-	   than let one row dictate the column, the width is capped in characters and rows that exceed it
-	   are cut with an ellipsis, so the sidebar tracks the longest NAME and nothing else. */
-	#buffer-list ul{width:max-content;flex:0 0 auto;max-width:28ch}
+	/* width from the longest row and nothing else; the cap is only a guard against one absurd name */
+	#buffer-list ul{width:max-content;flex:0 0 auto;max-width:34ch}
 	#buffer-list li > a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-	/* the group caption needs its own line, so only that row may wrap */
-	#buffer-list li[data-net]{flex-wrap:nowrap}
-	#buffer-list li[data-shared-head]{flex-wrap:wrap}
 }
 #buffer-list li[data-pin] > a::before{content:"📌";font-size:.8em;margin-right:.35em;opacity:.75;
 	filter:var(--pin-filter,none);display:inline-block}
