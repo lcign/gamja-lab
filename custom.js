@@ -414,14 +414,14 @@
 		return '';
 	}
 
-	// the chat header says only "#channel" (and on desktop gamja hides even that), which on a bouncer
-	// with eleven networks is not enough to tell where you are — least of all in a private message.
-	// The network is stamped on the title element and CSS prefixes it.
+	// Private messages only: a nick in the header does not say which network the query came from,
+	// while a channel is unambiguous enough. The network is stamped on the title element and CSS
+	// prefixes it there — and shows the title, which gamja hides on desktop.
 	function stampHeader() {
 		var title = document.querySelector('#buffer-header .title');
 		if (!title) return;
 		var li = document.querySelector('#buffer-list li.active');
-		var net = li && !li.classList.contains('type-server') ? netOf(li) : '';
+		var net = li && isUser(li.firstElementChild) ? netOf(li) : '';
 		if (net) title.setAttribute('data-net', net); else title.removeAttribute('data-net');
 	}
 
