@@ -421,8 +421,14 @@
 		var title = document.querySelector('#buffer-header .title');
 		if (!title) return;
 		var li = document.querySelector('#buffer-list li.active');
-		var net = li && isUser(li.firstElementChild) ? netOf(li) : '';
-		if (net) title.setAttribute('data-net', net); else title.removeAttribute('data-net');
+		var a = li ? li.firstElementChild : null;
+		var tag = '';
+		if (a && isUser(a)) {
+			var net = netOf(li);
+			var nick = (a.textContent || '').trim();
+			if (nick && net) tag = nick + '@' + net;
+		}
+		if (tag) title.setAttribute('data-pm', tag); else title.removeAttribute('data-pm');
 	}
 
 	function tick() { markPinned(); injectPinButton(); stampHeader(); }

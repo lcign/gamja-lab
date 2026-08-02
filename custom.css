@@ -130,8 +130,8 @@ html{font-size:calc(16px * var(--fs,1))}
 /* the header line is shown only for private messages, where the network matters: gamja keeps the
    title hidden on desktop, and for channels that stays as it was. */
 #buffer-header .title{display:none}
-#buffer-header .title[data-net]{display:block}
-#buffer-header .title[data-net]::before{content:attr(data-net) " - ";opacity:.65}
+#buffer-header .title[data-pm]{display:block}
+#buffer-header .title[data-pm]::before{content:attr(data-pm) " - "}
 /* everything on ONE line: gamja stacks the name over the topic in a grid (rows 1 and 2). As a flex
    row the reload button, the name and the topic sit side by side, the topic taking the slack and
    ellipsising instead of wrapping, and the actions staying pinned to the right. */
