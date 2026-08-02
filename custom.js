@@ -431,7 +431,19 @@
 		if (tag) title.setAttribute('data-pm', tag); else title.removeAttribute('data-pm');
 	}
 
-	function tick() { markPinned(); injectPinButton(); stampHeader(); }
+	// ⚠️ Ellipsis drawn by hand, because `text-overflow` was not producing one here: whatever clips
+	// those nicks, it is not the link's own box. Overflow IS detectable in JS (scrollWidth vs
+	// clientWidth), so the row gets an attribute and CSS paints the … over the cut.
+	function markNickCuts() {
+		var as = document.querySelectorAll('#member-list li > a'), i, a;
+		for (i = 0; i < as.length; i++) {
+			a = as[i];
+			if (a.scrollWidth > a.clientWidth + 1) a.parentNode.setAttribute('data-cut', '');
+			else a.parentNode.removeAttribute('data-cut');
+		}
+	}
+
+	function tick() { markPinned(); injectPinButton(); stampHeader(); markNickCuts(); }
 	setInterval(tick, 700);
 	tick();
 })();

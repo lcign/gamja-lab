@@ -119,6 +119,13 @@ html{font-size:calc(16px * var(--fs,1))}
    deliberate: `overflow:hidden` on an inline-block moves its baseline and spaces every row apart. */
 #member-list li > a{display:block;box-sizing:border-box;width:100%;overflow:hidden;
 	text-overflow:ellipsis;white-space:nowrap}
+/* the … itself: painted over the end of the row, on an opaque strip so it does not sit on top of the
+   clipped letters. The attribute comes from custom.js, which measures the overflow. */
+#member-list li{position:relative}
+#member-list li[data-cut]::after{content:"…";position:absolute;right:0;top:0;
+	padding:2px 8px 2px 2px;line-height:1.3;pointer-events:none;
+	background-color:var(--sidebar-background)}
+
 /* ⚠️ the cap belongs to the COLUMN, not to the link: a link wider than its column overflows, and
    then the clipping is done by the list's `overflow:hidden` — which draws no ellipsis at all. With
    the column capped and the link at 100%, the cut happens inside the link, where the … shows. */
