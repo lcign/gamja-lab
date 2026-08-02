@@ -311,6 +311,74 @@
 	tick();
 })();
 
+/* ===================== buffer reload (⟳) =====================
+   Every so often a channel renders empty right after joining: the buffer is there, the messages
+   are not. Switching to another buffer and back brings them in. This button does exactly that,
+   and nothing else: it clicks gamja's OWN sidebar links, so no state is reached into and no
+   bundle hook is needed. Sits next to the 📌 in the member list header, same injection pattern.
+
+   Why a manual button and not a fix: gamja's history-on-empty-buffer defect is already patched in
+   the bundle (`restoreScrollPosition` now calls `onScrollTop()` when the buffer has no children),
+   and the empty render still happens now and then — so what is missing is a way to retry, not
+   another guard. */
+(function () {
+	var BACK_MS = 90;
+
+	function activeLink() { return document.querySelector('#buffer-list li.active > a'); }
+
+	// Where to bounce off. The server row is preferred: it is always present and carries no unread
+	// of its own, so the round trip does not mark a real conversation as read.
+	function bounceLink(cur) {
+		var lis = document.querySelectorAll('#buffer-list li'), i, a;
+		for (i = 0; i < lis.length; i++) {
+			if (!lis[i].classList.contains('type-server')) continue;
+			a = lis[i].firstElementChild;
+			if (a && a !== cur) return a;
+		}
+		for (i = 0; i < lis.length; i++) {
+			a = lis[i].firstElementChild;
+			if (a && a !== cur) return a;
+		}
+		return null;
+	}
+
+	// href lookup by comparison rather than an attribute selector: buffer hrefs carry `#`, `,` and
+	// percent escapes, which would need escaping inside a selector string.
+	function linkByHref(href) {
+		var as = document.querySelectorAll('#buffer-list li > a'), i;
+		for (i = 0; i < as.length; i++) { if (as[i].getAttribute('href') === href) return as[i]; }
+		return null;
+	}
+
+	function reload(btn) {
+		var cur = activeLink(); if (!cur) return;
+		var href = cur.getAttribute('href'), away = bounceLink(cur);
+		if (!href || !away) return;
+		if (btn) btn.classList.add('spin');
+		away.click();
+		setTimeout(function () {
+			var back = linkByHref(href);
+			if (back) back.click();
+			if (btn) btn.classList.remove('spin');
+		}, BACK_MS);
+	}
+
+	function injectReloadButton() {
+		var head = document.getElementById('member-list-header');
+		if (!head) return;
+		var btn = head.querySelector('button.mlh-reload');
+		if (!activeLink()) { if (btn) btn.remove(); return; }
+		if (btn) return;
+		btn = document.createElement('button');
+		btn.type = 'button'; btn.className = 'mlh-reload'; btn.textContent = '⟳';
+		btn.title = 'Reload this buffer (switches away and back, which pulls in messages that did not render)';
+		btn.addEventListener('click', function (e) { e.preventDefault(); reload(btn); });
+		head.appendChild(btn);
+	}
+	setInterval(injectReloadButton, 700);
+	injectReloadButton();
+})();
+
 /* ===================== /list dialog (data from the `gamja-list` event) ===================== */
 (function () {
 	var chans = [];

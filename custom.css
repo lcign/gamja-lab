@@ -117,6 +117,14 @@ html{font-size:calc(16px * var(--fs,1))}
 #member-list-header .mlh-pin:hover{opacity:.65}
 #member-list-header .mlh-pin.on{opacity:1}
 
+/* buffer reload (⟳): same treatment as the pin, minus the pin's color filter (it is not an emoji,
+   so `color` works on it) */
+#member-list-header .mlh-reload{background:none;border:none;color:inherit;cursor:pointer;
+	font-size:1.05rem;line-height:1;padding:0 2px;opacity:.3}
+#member-list-header .mlh-reload:hover{opacity:.75}
+#member-list-header .mlh-reload.spin{opacity:1;animation:mlh-spin .45s linear}
+@keyframes mlh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js) */
 #buffer-list ul{display:flex;flex-direction:column}
 #buffer-list li[data-pin] > a::before{content:"📌";font-size:.8em;margin-right:.35em;opacity:.75;

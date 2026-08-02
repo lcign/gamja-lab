@@ -51,6 +51,13 @@ full-width placement for free.
 channel and floats it to the top of the channel list, right below the bouncer row, with a 📌 in front
 of its name.
 
+**Buffer reload (⟳)** — a second button in the member list header, next to the 📌. Every so often a
+channel renders empty right after joining: the buffer is there, the messages are not. Switching to
+another buffer and back brings them in, and this button does exactly that — it clicks gamja's own
+sidebar links, bouncing off the server row and returning. Note that the round trip marks the server
+row as read. The underlying defect (no history fetch on an empty buffer) is one of the optional
+bundle fixes below, but it does not catch every case, so a manual retry is still worth having.
+
 **`/list` dialog** — sortable channel list (by user count or name), filter on name and topic,
 *shown / total* counter, click a row to join.
 
