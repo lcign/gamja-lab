@@ -110,6 +110,12 @@ html{font-size:calc(16px * var(--fs,1))}
 #listPanel .lp-t{color:var(--gray);font-size:0.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #listPanel .lp-more{padding:0.7rem 1rem;color:var(--gray);font-size:0.92rem;text-align:center}
 
+/* member list: very long nicks used to widen the right column for nothing. Cut at 15 characters
+   plus the ellipsis — the full nick stays in the link's own title on hover. `display:block` is
+   deliberate: `overflow:hidden` on an inline-block moves its baseline and spaces every row apart. */
+#member-list li > a{display:block;max-width:16ch;overflow:hidden;text-overflow:ellipsis;
+	white-space:nowrap}
+
 /* channel pin (senpai-style) in the member list header */
 #member-list-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #member-list-header .mlh-pin{background:none;border:none;color:inherit;cursor:pointer;font-size:1rem;
