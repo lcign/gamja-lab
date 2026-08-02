@@ -129,19 +129,27 @@ html{font-size:calc(16px * var(--fs,1))}
    private message, where the nick alone does not tell you where the query came from. */
 #buffer-header .title{display:block}
 #buffer-header .title[data-net]::before{content:attr(data-net) " - ";opacity:.65}
+/* everything on ONE line: gamja stacks the name over the topic in a grid (rows 1 and 2). As a flex
+   row the reload button, the name and the topic sit side by side, the topic taking the slack and
+   ellipsising instead of wrapping, and the actions staying pinned to the right. */
+#buffer-header{display:flex;align-items:baseline;gap:.5em}
+#buffer-header .title{flex:0 0 auto;padding:5px 0 5px 10px;white-space:nowrap}
+#buffer-header .description{flex:1 1 auto;min-width:0;max-height:none;padding:5px 0;
+	overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#buffer-header .actions{flex:0 0 auto;margin-left:auto}
 
 /* buffer reload (⟳), in front of the channel topic. #buffer-header is a grid: `.title` sits in
    1/1, `.description` (the topic) in 2/1, `.actions` spans 1/2/3. custom.js appends the button as
    the LAST child — appending is what preact tolerates — and it is placed here into the topic's own
    cell, with the topic text pushed right to make room. `⟳` is a glyph, not an emoji, so unlike the
    📌 it takes `color` directly and needs no filter. */
-#buffer-header .bh-reload{grid-area:2/1;justify-self:start;align-self:start;
-	margin:2px 0 0 8px;padding:1px 8px 3px;background:none;cursor:pointer;
+#buffer-header .bh-reload{order:-1;flex:0 0 auto;
+	margin:0 0 0 8px;padding:1px 8px 3px;background:none;cursor:pointer;
 	color:var(--link-color,var(--green));border:1px solid currentColor;border-radius:6px;
 	font-size:1.35rem;line-height:1.15;opacity:.8}
 #buffer-header .bh-reload:hover{opacity:1;background-color:rgba(127,127,127,.18)}
 #buffer-header .bh-reload.spin{opacity:1;animation:mlh-spin .45s linear}
-#buffer-header .description{padding-left:52px}
+
 
 /* "reloading…" shown over the buffer while the round trip happens */
 #buffer .bh-reloading{padding:14px 10px;text-align:center;opacity:.55;font-style:italic;
