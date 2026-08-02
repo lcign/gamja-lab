@@ -54,8 +54,14 @@ of its name.
 **Buffer reload (⟳)** — a button in the buffer header, in front of the channel topic. Every so often a
 channel renders empty right after joining: the buffer is there, the messages are not. Switching to
 another buffer and back brings them in, and this button does exactly that — it clicks gamja's own
-sidebar links, bouncing off the server row and returning. Note that the round trip marks the server
-row as read. The underlying defect (no history fetch on an empty buffer) is one of the optional
+sidebar links and returning, with a *reloading…* notice over the buffer while it happens.
+
+The bounce needs a **real** buffer: gamja switches only between buffers it owns, and a hand-made
+`<a>` carries none of its click handlers, so a synthetic "empty page" is not possible without a
+bundle hook. Targets are tried in this order: a **scratch buffer** — open one once with
+`/query reload` and it sits in the sidebar doing nothing, so the round trip marks nothing real as
+read (rename it through `localStorage` key `gamja_reload_scratch`) — then the **server row of the
+same network**, then any other buffer. The underlying defect (no history fetch on an empty buffer) is one of the optional
 bundle fixes below, but it does not catch every case, so a manual retry is still worth having.
 
 **`/list` dialog** — sortable channel list (by user count or name), filter on name and topic,

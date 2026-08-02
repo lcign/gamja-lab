@@ -326,11 +326,29 @@
 
 	function activeLink() { return document.querySelector('#buffer-list li.active > a'); }
 
-	// Where to bounce off. The server row is preferred: it is always present and carries no unread
-	// of its own, so the round trip does not mark a real conversation as read.
+	// Where to bounce off, best first:
+	//   1. a scratch buffer, if one exists — open it once with `/query reload` and it stays in the
+	//      sidebar doing nothing. Bouncing off it marks nothing real as read. Rename it through
+	//      localStorage `gamja_reload_scratch`.
+	//   2. the server row OF THE SAME NETWORK: the sidebar lists a network row followed by its
+	//      channels, so it is the nearest preceding `.type-server`.
+	//   3. anything else that is not the current buffer.
+	// A truly synthetic target is not possible without a bundle hook: gamja switches only between
+	// buffers it owns, and a hand-made <a> carries none of its click handlers.
+	var SCRATCH_KEY = 'gamja_reload_scratch';
+	function scratchName() {
+		try { return (localStorage.getItem(SCRATCH_KEY) || 'reload').toLowerCase(); } catch (e) { return 'reload'; }
+	}
 	function bounceLink(cur) {
-		var lis = document.querySelectorAll('#buffer-list li'), i, a;
+		var lis = Array.prototype.slice.call(document.querySelectorAll('#buffer-list li'));
+		var want = scratchName(), i, a, cursor = -1;
+
 		for (i = 0; i < lis.length; i++) {
+			a = lis[i].firstElementChild;
+			if (a === cur) { cursor = i; continue; }
+			if (a && (a.textContent || '').trim().toLowerCase() === want) return a;
+		}
+		for (i = cursor - 1; i >= 0; i--) {
 			if (!lis[i].classList.contains('type-server')) continue;
 			a = lis[i].firstElementChild;
 			if (a && a !== cur) return a;
@@ -340,6 +358,21 @@
 			if (a && a !== cur) return a;
 		}
 		return null;
+	}
+
+	// "reloading…" over the buffer for the length of the round trip. Passive text, no controls: it
+	// is appended into #buffer and preact is free to wipe it on the next render, which is when it
+	// stops being wanted anyway.
+	function showNotice() {
+		var host = document.getElementById('buffer');
+		if (!host || host.querySelector('.bh-reloading')) return;
+		var d = document.createElement('div');
+		d.className = 'bh-reloading'; d.textContent = 'reloading…';
+		host.appendChild(d);
+	}
+	function hideNotice() {
+		var d = document.querySelector('#buffer .bh-reloading');
+		if (d) d.remove();
 	}
 
 	// href lookup by comparison rather than an attribute selector: buffer hrefs carry `#`, `,` and
@@ -356,10 +389,12 @@
 		if (!href || !away) return;
 		if (btn) btn.classList.add('spin');
 		away.click();
+		showNotice();
 		setTimeout(function () {
 			var back = linkByHref(href);
 			if (back) back.click();
 			if (btn) btn.classList.remove('spin');
+			setTimeout(hideNotice, 150);
 		}, BACK_MS);
 	}
 

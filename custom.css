@@ -129,6 +129,10 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer-header .bh-reload:hover{opacity:1;background-color:rgba(127,127,127,.18)}
 #buffer-header .bh-reload.spin{opacity:1;animation:mlh-spin .45s linear}
 #buffer-header .description{padding-left:52px}
+
+/* "reloading…" shown over the buffer while the round trip happens */
+#buffer .bh-reloading{padding:14px 10px;text-align:center;opacity:.55;font-style:italic;
+	color:var(--link-color,var(--green))}
 @keyframes mlh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js) */
