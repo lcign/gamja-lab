@@ -132,8 +132,12 @@ html{font-size:calc(16px * var(--fs,1))}
 /* everything on ONE line: gamja stacks the name over the topic in a grid (rows 1 and 2). As a flex
    row the reload button, the name and the topic sit side by side, the topic taking the slack and
    ellipsising instead of wrapping, and the actions staying pinned to the right. */
-#buffer-header{display:flex;align-items:baseline;gap:.5em}
-#buffer-header .title{flex:0 0 auto;padding:5px 0 5px 10px;white-space:nowrap}
+/* ⚠️ `min-width:0` on the header AND on the title is what keeps the sidebar alive: as a grid item
+   the header defaults to `min-width:auto`, so an unshrinkable nowrap title made the middle column
+   demand more than the window had, and the channel list was squeezed to nothing. */
+#buffer-header{display:flex;align-items:baseline;gap:.5em;min-width:0}
+#buffer-header .title{flex:0 1 auto;min-width:0;padding:5px 0 5px 10px;white-space:nowrap;
+	overflow:hidden;text-overflow:ellipsis}
 #buffer-header .description{flex:1 1 auto;min-width:0;max-height:none;padding:5px 0;
 	overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #buffer-header .actions{flex:0 0 auto;margin-left:auto}
