@@ -48,7 +48,7 @@ full-width placement for free.
   `--green` is left with what it actually still drives, operators and online status, and `--red`
   is *Alert*.
 
-<img src="extra-panel.png" alt="The Extra panel" width="330">
+<img src="extra-panel-v2.png" alt="The Extra panel" width="330">
 
 **Channel pinning (senpai-style)** — a 📌 in the member list header, next to *N users*: pins the open
 channel and floats it to the top of the channel list, right below the bouncer row, with a 📌 in front
