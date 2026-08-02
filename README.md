@@ -89,6 +89,12 @@ which gamja binds to Ctrl — handy because macOS already claims Ctrl+K inside a
 block, because it walks the internal buffer Map while pinning only reorders the view. Navigation is
 redone on the visible order.
 
+**Row marks in the channel list** — networks get a `⚯` in front of the name and the bouncer row at
+the top gets a 🐇, so servers read as a different kind of row than channels at a glance. Both are
+swappable through the `--srv-icon` and `--bnc-icon` CSS variables. The network mark is a plain glyph
+on purpose, so it takes `color` and follows the theme; the rabbit is an emoji and therefore ignores
+it, like the 📌.
+
 **Forced dark theme** with self-hosted JetBrains Mono.
 
 ## Install

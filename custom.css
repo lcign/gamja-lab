@@ -135,6 +135,15 @@ html{font-size:calc(16px * var(--fs,1))}
 	color:var(--link-color,var(--green))}
 @keyframes mlh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
+/* network rows get a small mark in front of the name, so servers read as a different kind of row
+   than channels. `⚯` is a plain glyph, not an emoji: it takes `color` and follows the theme, which
+   a color-font emoji (🔗, ⛓) never would. Swap it through --srv-icon. */
+#buffer-list li.type-server > a::before{content:var(--srv-icon,"⚯");opacity:.55;margin-right:.4em;
+	display:inline-block}
+/* the first row is the bouncer itself, not a network: it gets its own mark. This one IS an emoji,
+   drawn by a color font, so it ignores `color` — same deal as the 📌. */
+#buffer-list li:first-child > a::before{content:var(--bnc-icon,"🐇");opacity:.9;font-size:.9em}
+
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js) */
 #buffer-list ul{display:flex;flex-direction:column}
 #buffer-list li[data-pin] > a::before{content:"📌";font-size:.8em;margin-right:.35em;opacity:.75;
