@@ -151,7 +151,12 @@ html{font-size:calc(16px * var(--fs,1))}
    one ::after — the dot would win and the network would vanish exactly when the channel has
    activity. It goes on the <li> instead, which turns into a flex row so the label sits right after
    the name (`#linux` `@libera`) instead of on a line of its own. */
-#buffer-list li[data-net]{display:flex;align-items:baseline;flex-wrap:wrap}
+#buffer-list li[data-net]{display:flex;align-items:baseline;flex-wrap:wrap;padding-right:10px}
+/* selection has to cover the whole row, label included: gamja paints it on the <a>, which here no
+   longer spans the row, so for these rows it moves onto the <li> and the label follows its color */
+#buffer-list li[data-net].active{background-color:var(--bl-active-bg,#fff)}
+#buffer-list li[data-net].active > a{background-color:transparent}
+#buffer-list li[data-net].active::after{color:var(--bl-active-color,var(--sidebar-background))}
 /* gamja gives the link `width:100%` and 10px of right padding: inside a flex row that pushes the
    label onto the next line and leaves a hole before it. Both have to go for these rows. */
 #buffer-list li[data-net] > a{flex:0 0 auto;width:auto;padding-right:0}
