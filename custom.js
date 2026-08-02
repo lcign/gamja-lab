@@ -305,7 +305,17 @@
 			var pinned = m && has(m.name);
 			if (pinned) li.setAttribute('data-pin', ''); else li.removeAttribute('data-pin');
 			var shared = !!(group && m && Object.keys(nets[m.name]).length > 1);
-			if (shared && m.net) li.setAttribute('data-net', '@' + m.net); else li.removeAttribute('data-net');
+			// the label is drawn by `a::after`, and attr() only reads attributes of its OWN element,
+			// so the anchor needs the value too — on the <li> alone the label came out empty. The <li>
+			// keeps it as well, because the layout rules select on it.
+			var a = li.firstElementChild;
+			if (shared && m.net) {
+				li.setAttribute('data-net', '@' + m.net);
+				if (a) a.setAttribute('data-net', '@' + m.net);
+			} else {
+				li.removeAttribute('data-net');
+				if (a) a.removeAttribute('data-net');
+			}
 			li.removeAttribute('data-shared-head');
 			// the pin wins: a pinned channel stays in the pinned block even when its name is shared,
 			// it just keeps the @network label so it is not confused with its twin, which stays in
