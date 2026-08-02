@@ -169,6 +169,12 @@ html{font-size:calc(16px * var(--fs,1))}
 	line-height:1;font-size:1.15em}
 /* nothing on the row you are reading: it says nothing you cannot see */
 :root[data-unread-dot] #buffer-list li.active::after{content:none}
+/* ⚠️ On the rows that carry a caption the <li> is taller by the caption's height, so `top:50%`
+   centred the dot between caption and channel. These centre it on the row's own line instead. */
+:root[data-unread-dot] #buffer-list li[data-shared-head]::after,
+:root[data-unread-dot] #buffer-list li[data-pm-head]::after{
+	top:auto;bottom:calc((1.3em + 4px) / 2);transform:translateY(50%)}
+
 /* ── dot in FRONT of the name (Extra → "Unread dot on the left") ──
    The reserved strip simply swaps side, so the geometry stays identical and rows keep lining up
    whether or not they have activity. The group caption follows the indent, otherwise it would start
