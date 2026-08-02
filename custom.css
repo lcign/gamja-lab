@@ -239,6 +239,8 @@ kbd{
 #buffer-list li.active.unread-message > a,
 #buffer-list li.active.unread-highlight > a{
 	color:var(--bl-active-color,var(--sidebar-background))}
+/* no unread dot on the channel you are currently reading: it says nothing you cannot see */
+:root[data-unread-dot] #buffer-list li.active > a::after{display:none}
 
 /* ===== color of links in messages =====
    ⚠️ In gamja links use `--green`, the SAME variable as unread: changing the accent also changed
