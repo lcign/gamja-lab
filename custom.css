@@ -124,6 +124,12 @@ html{font-size:calc(16px * var(--fs,1))}
 #member-list-header .mlh-pin:hover{opacity:.65}
 #member-list-header .mlh-pin.on{opacity:1}
 
+/* chat header: gamja hides the buffer name on desktop (its `.title` is display:none above 640px)
+   and never says which network you are on. Shown again, with the network in front — decisive in a
+   private message, where the nick alone does not tell you where the query came from. */
+#buffer-header .title{display:block}
+#buffer-header .title[data-net]::before{content:attr(data-net) " - ";opacity:.65}
+
 /* buffer reload (⟳), in front of the channel topic. #buffer-header is a grid: `.title` sits in
    1/1, `.description` (the topic) in 2/1, `.actions` spans 1/2/3. custom.js appends the button as
    the LAST child — appending is what preact tolerates — and it is placed here into the topic's own

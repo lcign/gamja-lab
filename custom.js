@@ -404,7 +404,28 @@
 		btn.classList.toggle('on', on);
 		btn.title = (on ? 'Unpin ' : 'Pin ') + chan + ' (keeps it at the top of the channel list)';
 	}
-	function tick() { markPinned(); injectPinButton(); }
+	// network of a row: the <li> does not carry it, so walk up to the network row above it. The very
+	// first row is the bouncer, which is not a network.
+	function netOf(li) {
+		for (var p = li ? li.previousElementSibling : null; p; p = p.previousElementSibling) {
+			if (!p.classList.contains('type-server')) continue;
+			return p.previousElementSibling ? ((p.firstElementChild || {}).textContent || '').trim() : '';
+		}
+		return '';
+	}
+
+	// the chat header says only "#channel" (and on desktop gamja hides even that), which on a bouncer
+	// with eleven networks is not enough to tell where you are — least of all in a private message.
+	// The network is stamped on the title element and CSS prefixes it.
+	function stampHeader() {
+		var title = document.querySelector('#buffer-header .title');
+		if (!title) return;
+		var li = document.querySelector('#buffer-list li.active');
+		var net = li && !li.classList.contains('type-server') ? netOf(li) : '';
+		if (net) title.setAttribute('data-net', net); else title.removeAttribute('data-net');
+	}
+
+	function tick() { markPinned(); injectPinButton(); stampHeader(); }
 	setInterval(tick, 700);
 	tick();
 })();
