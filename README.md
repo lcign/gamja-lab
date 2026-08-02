@@ -51,7 +51,7 @@ full-width placement for free.
 channel and floats it to the top of the channel list, right below the bouncer row, with a 📌 in front
 of its name.
 
-**Buffer reload (⟳)** — a second button in the member list header, next to the 📌. Every so often a
+**Buffer reload (⟳)** — a button in the buffer header, in front of the channel topic. Every so often a
 channel renders empty right after joining: the buffer is there, the messages are not. Switching to
 another buffer and back brings them in, and this button does exactly that — it clicks gamja's own
 sidebar links, bouncing off the server row and returning. Note that the round trip marks the server

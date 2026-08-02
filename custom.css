@@ -117,12 +117,18 @@ html{font-size:calc(16px * var(--fs,1))}
 #member-list-header .mlh-pin:hover{opacity:.65}
 #member-list-header .mlh-pin.on{opacity:1}
 
-/* buffer reload (⟳): same treatment as the pin, minus the pin's color filter (it is not an emoji,
-   so `color` works on it) */
-#member-list-header .mlh-reload{background:none;border:none;color:inherit;cursor:pointer;
-	font-size:1.05rem;line-height:1;padding:0 2px;opacity:.3}
-#member-list-header .mlh-reload:hover{opacity:.75}
-#member-list-header .mlh-reload.spin{opacity:1;animation:mlh-spin .45s linear}
+/* buffer reload (⟳), in front of the channel topic. #buffer-header is a grid: `.title` sits in
+   1/1, `.description` (the topic) in 2/1, `.actions` spans 1/2/3. custom.js appends the button as
+   the LAST child — appending is what preact tolerates — and it is placed here into the topic's own
+   cell, with the topic text pushed right to make room. `⟳` is a glyph, not an emoji, so unlike the
+   📌 it takes `color` directly and needs no filter. */
+#buffer-header .bh-reload{grid-area:2/1;justify-self:start;align-self:start;
+	margin:2px 0 0 8px;padding:1px 8px 3px;background:none;cursor:pointer;
+	color:var(--link-color,var(--green));border:1px solid currentColor;border-radius:6px;
+	font-size:1.35rem;line-height:1.15;opacity:.8}
+#buffer-header .bh-reload:hover{opacity:1;background-color:rgba(127,127,127,.18)}
+#buffer-header .bh-reload.spin{opacity:1;animation:mlh-spin .45s linear}
+#buffer-header .description{padding-left:52px}
 @keyframes mlh-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js) */

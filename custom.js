@@ -363,14 +363,19 @@
 		}, BACK_MS);
 	}
 
+	// The button lives in the buffer header, in front of the channel topic, where it is impossible
+	// to miss. #buffer-header is a GRID (`.title` 1/1, `.description` 2/1, `.actions` 1/2/3), so the
+	// button is APPENDED last — inserting between children is what upsets preact's diff, appending
+	// does not — and then placed into the topic's own cell from CSS.
 	function injectReloadButton() {
-		var head = document.getElementById('member-list-header');
+		var head = document.getElementById('buffer-header');
 		if (!head) return;
-		var btn = head.querySelector('button.mlh-reload');
+		var btn = head.querySelector('button.bh-reload');
 		if (!activeLink()) { if (btn) btn.remove(); return; }
-		if (btn) return;
+		if (btn && btn.parentNode === head && btn === head.lastElementChild) return;
+		if (btn) btn.remove();
 		btn = document.createElement('button');
-		btn.type = 'button'; btn.className = 'mlh-reload'; btn.textContent = '⟳';
+		btn.type = 'button'; btn.className = 'bh-reload'; btn.textContent = '⟳';
 		btn.title = 'Reload this buffer (switches away and back, which pulls in messages that did not render)';
 		btn.addEventListener('click', function (e) { e.preventDefault(); reload(btn); });
 		head.appendChild(btn);
