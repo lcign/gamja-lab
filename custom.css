@@ -342,8 +342,10 @@ kbd{
 #buffer-list li.active.unread-message > a,
 #buffer-list li.active.unread-highlight > a{
 	color:var(--bl-active-color,var(--sidebar-background))}
-/* no unread dot on the channel you are currently reading: it says nothing you cannot see */
-:root[data-unread-dot] #buffer-list li.active > a::after{display:none}
+/* (the "no dot on the channel you are reading" rule used to live here, on `a::after`. It was
+   removed: that pseudo-element now carries the @network label, and the rule was hiding it as soon as
+   the channel was selected. The dot is suppressed on the active row up in the list block, on
+   `li::after`, where the dot actually is.) */
 
 /* ===== color of links in messages =====
    ⚠️ In gamja links use `--green`, the SAME variable as unread: changing the accent also changed
