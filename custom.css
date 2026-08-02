@@ -152,24 +152,25 @@ html{font-size:calc(16px * var(--fs,1))}
    activity. It goes on the <li> instead, which turns into a flex row so the label sits right after
    the name (`#linux` `@libera`) instead of on a line of its own. */
 #buffer-list li[data-net]{display:flex;align-items:baseline;flex-wrap:wrap;padding-right:1ch}
-/* room for the dot: one blank character plus the one it sits in, so it never touches the network
-   label. Reserved only while the dots are switched on — off, the rows keep their space. */
-:root[data-unread-dot] #buffer-list li[data-net]{padding-right:2ch}
+
 /* selection has to cover the whole row, label included: gamja paints it on the <a>, which here no
    longer spans the row, so for these rows it moves onto the <li> and the label follows its color */
 #buffer-list li[data-net].active{background-color:var(--bl-active-bg,#fff)}
 #buffer-list li[data-net].active > a{background-color:transparent}
 #buffer-list li[data-net].active::after{color:var(--bl-active-color,var(--sidebar-background))}
 /* the unread dot is `float:right` inside the link, which on these rows only wraps the name, so it
-   stopped mid-row. Anchored to the row's right edge instead, where it sits on every other row. */
-#buffer-list li[data-net]{position:relative}
-/* The strip it sits in is one character wide (`1ch`, exact in a monospace font) and is reserved on
-   EVERY grouped row, with or without activity: the geometry never shifts when a dot appears, and the
-   dot is centred in that strip both horizontally and vertically. */
+   stopped mid-row. Anchoring it to the row's right edge left a huge gap after short names, so the
+   dot is
+   folded into the label itself: the network suffix and the dot are one piece of generated content,
+   `@libera •`, which also fixes the ordering — the dot lives on `a::after`, and the link comes
+   BEFORE the label, so on its own it would have landed on the wrong side. */
 :root[data-unread-dot] #buffer-list li[data-net].unread-message > a::after,
-:root[data-unread-dot] #buffer-list li[data-net].unread-highlight > a::after{
-	position:absolute;right:0;top:50%;transform:translateY(-50%);float:none;margin:0;
-	width:1ch;text-align:center;line-height:1}
+:root[data-unread-dot] #buffer-list li[data-net].unread-highlight > a::after{content:none}
+:root[data-unread-dot] #buffer-list li[data-net].unread-message::after,
+:root[data-unread-dot] #buffer-list li[data-net].unread-highlight::after{content:attr(data-net) " •";
+	opacity:.85}
+/* …and nothing on the row you are reading, as everywhere else */
+:root[data-unread-dot] #buffer-list li[data-net].active::after{content:attr(data-net)}
 /* gamja gives the link `width:100%` and 10px of right padding: inside a flex row that pushes the
    label onto the next line and leaves a hole before it. Both have to go for these rows. */
 #buffer-list li[data-net] > a{flex:0 0 auto;width:auto;padding-right:0}
