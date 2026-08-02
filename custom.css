@@ -158,26 +158,33 @@ html{font-size:calc(16px * var(--fs,1))}
    longer spans the row, so for these rows it moves onto the <li> and the label follows its color */
 #buffer-list li[data-net].active{background-color:var(--bl-active-bg,#fff)}
 #buffer-list li[data-net].active > a{background-color:transparent}
-#buffer-list li[data-net].active::after{color:var(--bl-active-color,var(--sidebar-background))}
-/* the dot stays where it is on every other row — the right edge — which works here now that the
-   list is only as wide as its longest name. It keeps living on `a::after`, inside the link, so it
-   inherits the link's colour and follows Accent and Mention on its own; it is positioned against
-   the <li> and the row reserves 2.2ch on the right for it. */
+
+/* ⚠️ The two pseudo-elements are swapped compared to the obvious arrangement: the LABEL lives on
+   `a::after`, inside the link, so that the whole `#channel@network` is clickable — as generated
+   content on the <li> it was outside the anchor and only the name responded — and the DOT moves to
+   `li::after`, pinned to the right edge of the row, inheriting the row's colour (which activity
+   sets below, so it still follows Accent and Mention).
+   The unread variants have to restate the label: gamja's own dot rule targets the very same
+   `a::after` with a higher specificity and would otherwise overwrite it with a bullet. */
+#buffer-list li[data-net] > a::after{content:attr(data-net);opacity:.55}
 :root[data-unread-dot] #buffer-list li[data-net].unread-message > a::after,
 :root[data-unread-dot] #buffer-list li[data-net].unread-highlight > a::after{
-	position:absolute;right:0;top:50%;transform:translateY(-50%);float:none;margin:0;
-	width:2.2ch;text-align:center;line-height:1}
+	content:attr(data-net);float:none;margin:0;font-size:1em;opacity:.8}
+:root[data-unread-dot] #buffer-list li[data-net].unread-message::after,
+:root[data-unread-dot] #buffer-list li[data-net].unread-highlight::after{content:"•";
+	position:absolute;right:0;top:50%;transform:translateY(-50%);width:2.2ch;text-align:center;
+	line-height:1;font-size:1.15em}
+/* nothing on the row you are reading, as everywhere else */
+:root[data-unread-dot] #buffer-list li[data-net].active::after{content:none}
 /* activity colours the WHOLE row: gamja paints only the link, which here stops at the name, leaving
    the network label behind in the base colour — the row looked half highlighted. */
 #buffer-list li[data-net].unread-message{color:var(--activity-color,var(--green))}
 #buffer-list li[data-net].unread-highlight{color:var(--highlight-color)}
-#buffer-list li[data-net].unread-message::after,
-#buffer-list li[data-net].unread-highlight::after{opacity:.8}
+
 /* gamja gives the link `width:100%` and 10px of right padding: inside a flex row that pushes the
    label onto the next line and leaves a hole before it. Both have to go for these rows. */
 #buffer-list li[data-net] > a{flex:0 0 auto;width:auto;padding-right:0}
-/* joined to the name, no gap and no size change: the row has to read as one token, `#linux@Azzurra` */
-#buffer-list li[data-net]::after{content:attr(data-net);opacity:.55;margin-left:0}
+
 /* ⚠️ THE caption is positioned, not a flex item: as an item with `flex-basis:100%` it took part in
    the list's max-content calculation and blew the sidebar width far past the longest name — which is
    why the empty space showed up only with grouping on. Out of flow it costs nothing; the row makes
