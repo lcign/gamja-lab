@@ -179,8 +179,24 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer-list li[data-shared-head]::before{content:"shared names";flex-basis:100%;display:block;
 	font-size:.72em;letter-spacing:.08em;text-transform:uppercase;opacity:.45;padding:.55em 0 .1em .6em}
 
-/* channel list: flex column so entries can be reordered via `order` (assigned by custom.js) */
+/* channel list: flex column so entries can be reordered via `order` (assigned by custom.js).
+   The width is pinned to the longest row: gamja sizes the column as `max-content` but leaves the
+   list itself at `width:0` with `flex-grow`, which lets it stretch well past its content — with
+   grouping on, where rows read `#channel@network •`, the empty space became obvious. Capped so a
+   single very long name cannot eat the window. Desktop only: below 640px gamja relies on `width:0`
+   to keep the list collapsed behind its expander. */
 #buffer-list ul{display:flex;flex-direction:column}
+@media (min-width:641px){
+	/* `max-content` alone still left the list wide: something in the list — not any of the real
+	   channel names, the longest of which is 23 characters — measures far more than it shows. Rather
+	   than let one row dictate the column, the width is capped in characters and rows that exceed it
+	   are cut with an ellipsis, so the sidebar tracks the longest NAME and nothing else. */
+	#buffer-list ul{width:max-content;flex:0 0 auto;max-width:28ch}
+	#buffer-list li > a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+	/* the group caption needs its own line, so only that row may wrap */
+	#buffer-list li[data-net]{flex-wrap:nowrap}
+	#buffer-list li[data-shared-head]{flex-wrap:wrap}
+}
 #buffer-list li[data-pin] > a::before{content:"📌";font-size:.8em;margin-right:.35em;opacity:.75;
 	filter:var(--pin-filter,none);display:inline-block}
 
