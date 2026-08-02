@@ -147,10 +147,15 @@ html{font-size:calc(16px * var(--fs,1))}
 /* grouped shared names: the network suffix and the caption above the group. Both are generated
    content driven by attributes custom.js writes on the <li> — no nodes are inserted into the list,
    which is preact's territory. */
-#buffer-list li[data-net] > a::after{content:attr(data-net);opacity:.5;font-size:.85em;
-	margin-left:.3em}
-#buffer-list li[data-shared-head]::before{content:"shared names";display:block;font-size:.72em;
-	letter-spacing:.08em;text-transform:uppercase;opacity:.45;padding:.55em 0 .1em .6em}
+   ⚠️ The suffix cannot live on `a::after`: the unread dot is already there, and an element has only
+   one ::after — the dot would win and the network would vanish exactly when the channel has
+   activity. It goes on the <li> instead, which turns into a flex row so the label sits right after
+   the name (`#linux` `@libera`) instead of on a line of its own. */
+#buffer-list li[data-net]{display:flex;align-items:baseline;flex-wrap:wrap}
+#buffer-list li[data-net] > a{flex:0 0 auto}
+#buffer-list li[data-net]::after{content:attr(data-net);opacity:.5;font-size:.85em;margin-left:.15em}
+#buffer-list li[data-shared-head]::before{content:"shared names";flex-basis:100%;display:block;
+	font-size:.72em;letter-spacing:.08em;text-transform:uppercase;opacity:.45;padding:.55em 0 .1em .6em}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js) */
 #buffer-list ul{display:flex;flex-direction:column}
