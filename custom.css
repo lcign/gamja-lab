@@ -117,9 +117,15 @@ html{font-size:calc(16px * var(--fs,1))}
 /* member list: very long nicks used to widen the right column for nothing. Cut at 15 characters
    plus the ellipsis — the full nick stays in the link's own title on hover. `display:block` is
    deliberate: `overflow:hidden` on an inline-block moves its baseline and spaces every row apart. */
-#member-list li > a{display:block;box-sizing:border-box;
-	width:calc(var(--nick-max,16) * 1ch + 20px);max-width:100%;overflow:hidden;
+#member-list li > a{display:block;box-sizing:border-box;width:100%;overflow:hidden;
 	text-overflow:ellipsis;white-space:nowrap}
+/* ⚠️ the cap belongs to the COLUMN, not to the link: a link wider than its column overflows, and
+   then the clipping is done by the list's `overflow:hidden` — which draws no ellipsis at all. With
+   the column capped and the link at 100%, the cut happens inside the link, where the … shows. */
+@media (min-width:641px){
+	#member-list > section{width:calc(var(--nick-max,16) * 1ch + 20px);max-width:34vw;flex:0 0 auto}
+	#member-list ul{width:auto}
+}
 
 /* channel pin (senpai-style) in the member list header */
 #member-list-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
