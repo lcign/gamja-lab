@@ -151,6 +151,13 @@ html{font-size:calc(16px * var(--fs,1))}
    drawn by a color font, so it ignores `color` — same deal as the 📌. */
 #buffer-list li:first-child > a::before{content:var(--bnc-icon,"🐇");opacity:.9;font-size:.9em}
 
+/* private-message rows follow the same nick cap as the member list (Extra → "Nick length"), or one
+   long nick would widen the whole sidebar. The href is how gamja marks a user buffer. `display:block`
+   again avoids the inline-block baseline shift that would space these rows apart. */
+#buffer-list li > a[href*=",isuser"]{display:block;box-sizing:border-box;
+	max-width:calc(var(--nick-max,16) * 1ch + 20px);overflow:hidden;text-overflow:ellipsis;
+	white-space:nowrap}
+
 /* ── every row in the list, grouped or not ────────────────────────────────────────────────────
    Each one reserves a strip for the unread dot, so the sidebar width no longer depends on WHICH
    channels happen to have activity, and the dot never lands on the name. The dot moves off the
