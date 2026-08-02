@@ -152,8 +152,11 @@ html{font-size:calc(16px * var(--fs,1))}
    activity. It goes on the <li> instead, which turns into a flex row so the label sits right after
    the name (`#linux` `@libera`) instead of on a line of its own. */
 #buffer-list li[data-net]{display:flex;align-items:baseline;flex-wrap:wrap}
-#buffer-list li[data-net] > a{flex:0 0 auto}
-#buffer-list li[data-net]::after{content:attr(data-net);opacity:.5;font-size:.85em;margin-left:.15em}
+/* gamja gives the link `width:100%` and 10px of right padding: inside a flex row that pushes the
+   label onto the next line and leaves a hole before it. Both have to go for these rows. */
+#buffer-list li[data-net] > a{flex:0 0 auto;width:auto;padding-right:0}
+/* joined to the name, no gap and no size change: the row has to read as one token, `#linux@Azzurra` */
+#buffer-list li[data-net]::after{content:attr(data-net);opacity:.55;margin-left:0}
 #buffer-list li[data-shared-head]::before{content:"shared names";flex-basis:100%;display:block;
 	font-size:.72em;letter-spacing:.08em;text-transform:uppercase;opacity:.45;padding:.55em 0 .1em .6em}
 
