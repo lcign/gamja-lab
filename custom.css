@@ -231,6 +231,14 @@ kbd{
    the "Channel activity" control did nothing at all. Here it finally gets its effect — a channel
    with activity in the left list — falling back to `--green`. */
 #buffer-list li.unread-message > a{color:var(--activity-color, var(--green))}
+/* …but the SELECTED channel keeps its own colors: the rule above has the same specificity as the
+   `.active` one and comes later in the file, so without this it would win and paint the activity
+   color onto the active background — on an orange background the text vanishes. The doubled class
+   raises specificity above both. */
+#buffer-list li.active > a,
+#buffer-list li.active.unread-message > a,
+#buffer-list li.active.unread-highlight > a{
+	color:var(--bl-active-color,var(--sidebar-background))}
 
 /* ===== color of links in messages =====
    ⚠️ In gamja links use `--green`, the SAME variable as unread: changing the accent also changed
