@@ -157,6 +157,12 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer-list li[data-net].active{background-color:var(--bl-active-bg,#fff)}
 #buffer-list li[data-net].active > a{background-color:transparent}
 #buffer-list li[data-net].active::after{color:var(--bl-active-color,var(--sidebar-background))}
+/* the unread dot is `float:right` inside the link, which on these rows only wraps the name, so it
+   stopped mid-row. Anchored to the row's right edge instead, where it sits on every other row. */
+#buffer-list li[data-net]{position:relative}
+:root[data-unread-dot] #buffer-list li[data-net].unread-message > a::after,
+:root[data-unread-dot] #buffer-list li[data-net].unread-highlight > a::after{
+	position:absolute;right:4px;top:1px;float:none;margin:0}
 /* gamja gives the link `width:100%` and 10px of right padding: inside a flex row that pushes the
    label onto the next line and leaves a hole before it. Both have to go for these rows. */
 #buffer-list li[data-net] > a{flex:0 0 auto;width:auto;padding-right:0}
