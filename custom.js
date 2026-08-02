@@ -307,10 +307,11 @@
 			var shared = !!(group && m && Object.keys(nets[m.name]).length > 1);
 			if (shared && m.net) li.setAttribute('data-net', '@' + m.net); else li.removeAttribute('data-net');
 			li.removeAttribute('data-shared-head');
-			// a shared name goes to the group even when it is pinned: with the same name sitting on
-			// two networks, the pinned block would show two identical-looking rows. It keeps its 📌.
-			if (shared) dupe.push(li);
-			else if (pinned) pin.push(li);
+			// the pin wins: a pinned channel stays in the pinned block even when its name is shared,
+			// it just keeps the @network label so it is not confused with its twin, which stays in
+			// the group below.
+			if (pinned) pin.push(li);
+			else if (shared) dupe.push(li);
 			else rest.push(li);
 		}
 

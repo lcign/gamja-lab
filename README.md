@@ -92,8 +92,9 @@ redone on the visible order.
 **Grouping of shared channel names** (*Extra* panel, off by default) — `#linux` on two networks used
 to sit far apart in the list, indistinguishable. Switched on, every name present on more than one
 network is lifted out of its network and gathered right below the pinned block under a *shared names*
-caption, each row labelled `@network`. A pinned channel whose name is shared joins the group too — in
-the pinned block it would have been one of two identical-looking rows — and keeps its 📌.
+caption, each row labelled `@network`. **The pin wins**: a pinned channel stays in the pinned block
+even when its name is shared, it only gains the `@network` label so it cannot be confused with its
+twin, which stays down in the group.
 
 The network is not written anywhere on the `<li>`: it is derived from DOM order, by walking up to the
 network row that precedes the channel. Ordering reuses the pinning mechanism (`style.order` plus
