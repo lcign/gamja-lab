@@ -294,7 +294,10 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer-list{background-color:var(--bl-background,var(--sidebar-background))}
 #buffer-list li a{color:var(--bl-color,var(--main-color))}
 /* selected channel: gamja nails it to background-color:#fff, here it becomes configurable */
-#buffer-list li.active a{background-color:var(--bl-active-bg,#fff);color:var(--bl-active-color,var(--sidebar-background))}
+/* ⚠️ colour only: the BACKGROUND of the active row lives on the <li> (see the list block above), so
+   that it covers the whole row. Painting it here as well — later in the file, same specificity —
+   silently overrode that and brought the half-row highlight back. */
+#buffer-list li.active a{color:var(--bl-active-color,var(--sidebar-background))}
 
 /* Extra panel: numeric row + warning + section separator */
 #themePanel .tp-num{width:4.2rem;background:var(--main-background);color:var(--main-color);
