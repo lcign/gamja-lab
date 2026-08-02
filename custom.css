@@ -166,10 +166,11 @@ html{font-size:calc(16px * var(--fs,1))}
    sets below, so it still follows Accent and Mention).
    The unread variants have to restate the label: gamja's own dot rule targets the very same
    `a::after` with a higher specificity and would otherwise overwrite it with a bullet. */
-#buffer-list li[data-net] > a::after{content:attr(data-net);opacity:.55}
+/* same colour as the name: the label is part of the channel's identity here, not an annotation */
+#buffer-list li[data-net] > a::after{content:attr(data-net)}
 :root[data-unread-dot] #buffer-list li[data-net].unread-message > a::after,
 :root[data-unread-dot] #buffer-list li[data-net].unread-highlight > a::after{
-	content:attr(data-net);float:none;margin:0;font-size:1em;opacity:.8}
+	content:attr(data-net);float:none;margin:0;font-size:1em}
 :root[data-unread-dot] #buffer-list li[data-net].unread-message::after,
 :root[data-unread-dot] #buffer-list li[data-net].unread-highlight::after{content:"•";
 	position:absolute;right:0;top:50%;transform:translateY(-50%);width:2.2ch;text-align:center;
