@@ -113,7 +113,8 @@ html{font-size:calc(16px * var(--fs,1))}
 /* member list: very long nicks used to widen the right column for nothing. Cut at 15 characters
    plus the ellipsis — the full nick stays in the link's own title on hover. `display:block` is
    deliberate: `overflow:hidden` on an inline-block moves its baseline and spaces every row apart. */
-#member-list li > a{display:block;max-width:calc(var(--nick-max,16) * 1ch);overflow:hidden;
+#member-list li > a{display:block;box-sizing:border-box;
+	width:calc(var(--nick-max,16) * 1ch + 20px);max-width:100%;overflow:hidden;
 	text-overflow:ellipsis;white-space:nowrap}
 
 /* channel pin (senpai-style) in the member list header */
