@@ -114,25 +114,6 @@ html{font-size:calc(16px * var(--fs,1))}
 #listPanel .lp-t{color:var(--gray);font-size:0.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #listPanel .lp-more{padding:0.7rem 1rem;color:var(--gray);font-size:0.92rem;text-align:center}
 
-/* member list: very long nicks used to widen the right column for nothing. Cut at 15 characters
-   plus the ellipsis — the full nick stays in the link's own title on hover. `display:block` is
-   deliberate: `overflow:hidden` on an inline-block moves its baseline and spaces every row apart. */
-#member-list li > a{display:block;box-sizing:border-box;width:100%;overflow:hidden;
-	text-overflow:ellipsis;white-space:nowrap}
-/* the … itself: painted over the end of the row, on an opaque strip so it does not sit on top of the
-   clipped letters. The attribute comes from custom.js, which measures the overflow. */
-#member-list li{position:relative}
-#member-list li[data-cut]::after{content:"…";position:absolute;right:0;top:0;
-	padding:2px 8px 2px 2px;line-height:1.3;pointer-events:none;
-	background-color:var(--sidebar-background)}
-
-/* ⚠️ the cap belongs to the COLUMN, not to the link: a link wider than its column overflows, and
-   then the clipping is done by the list's `overflow:hidden` — which draws no ellipsis at all. With
-   the column capped and the link at 100%, the cut happens inside the link, where the … shows. */
-@media (min-width:641px){
-	#member-list > section{width:calc(var(--nick-max,16) * 1ch + 20px);max-width:34vw;flex:0 0 auto}
-	#member-list ul{width:auto}
-}
 
 /* channel pin (senpai-style) in the member list header */
 #member-list-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -188,13 +169,6 @@ html{font-size:calc(16px * var(--fs,1))}
 /* the first row is the bouncer itself, not a network: it gets its own mark. This one IS an emoji,
    drawn by a color font, so it ignores `color` — same deal as the 📌. */
 #buffer-list li:first-child > a::before{content:var(--bnc-icon,"🐇");opacity:.9;font-size:.9em}
-
-/* private-message rows follow the same nick cap as the member list (Extra → "Nick length"), or one
-   long nick would widen the whole sidebar. The href is how gamja marks a user buffer. `display:block`
-   again avoids the inline-block baseline shift that would space these rows apart. */
-#buffer-list li > a[href*=",isuser"]{display:block;box-sizing:border-box;
-	max-width:calc(var(--nick-max,16) * 1ch + 20px);overflow:hidden;text-overflow:ellipsis;
-	white-space:nowrap}
 
 /* ── every row in the list, grouped or not ────────────────────────────────────────────────────
    Each one reserves a strip for the unread dot, so the sidebar width no longer depends on WHICH

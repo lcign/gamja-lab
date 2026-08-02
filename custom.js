@@ -431,19 +431,31 @@
 		if (tag) title.setAttribute('data-pm', tag); else title.removeAttribute('data-pm');
 	}
 
-	// ⚠️ Ellipsis drawn by hand, because `text-overflow` was not producing one here: whatever clips
-	// those nicks, it is not the link's own box. Overflow IS detectable in JS (scrollWidth vs
-	// clientWidth), so the row gets an attribute and CSS paints the … over the cut.
-	function markNickCuts() {
-		var as = document.querySelectorAll('#member-list li > a'), i, a;
-		for (i = 0; i < as.length; i++) {
-			a = as[i];
-			if (a.scrollWidth > a.clientWidth + 1) a.parentNode.setAttribute('data-cut', '');
-			else a.parentNode.removeAttribute('data-cut');
+	/* ⚠️ The nick is shortened in the TEXT, not with CSS: `text-overflow` produced no ellipsis here
+	   whatever the box it was applied to, and measuring the overflow did not help either. Cutting the
+	   string is immune to all of that. The original is kept in `data-full`, so a re-render by preact
+	   (which puts the whole nick back) is simply cut again on the next tick, and a nick that changes
+	   is picked up because the text it restores does not end in an ellipsis. */
+	function shortenNicks() {
+		var max = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nick-max'), 10);
+		max = (max > 1 ? max : 16) - 1;                       // the variable includes room for the …
+		var as = document.querySelectorAll('#member-list li > a, #buffer-list li > a[href*=",isuser"]');
+		for (var i = 0; i < as.length; i++) {
+			var a = as[i], node = a.lastChild;
+			if (!node || node.nodeType !== 3) continue;        // membership sigil aside, the nick is a text node
+			var cur = node.nodeValue, kept = a.getAttribute('data-full');
+			var full = (kept && cur.slice(-1) === '…') ? kept : cur;
+			if (full.length > max) {
+				var cut = full.slice(0, max) + '…';
+				if (cur !== cut) { a.setAttribute('data-full', full); node.nodeValue = cut; }
+			} else {
+				if (cur !== full) node.nodeValue = full;
+				a.removeAttribute('data-full');
+			}
 		}
 	}
 
-	function tick() { markPinned(); injectPinButton(); stampHeader(); markNickCuts(); }
+	function tick() { markPinned(); injectPinButton(); stampHeader(); shortenNicks(); }
 	setInterval(tick, 700);
 	tick();
 })();
