@@ -152,6 +152,9 @@ html{font-size:calc(16px * var(--fs,1))}
    activity. It goes on the <li> instead, which turns into a flex row so the label sits right after
    the name (`#linux` `@libera`) instead of on a line of its own. */
 #buffer-list li[data-net]{display:flex;align-items:baseline;flex-wrap:wrap;padding-right:1ch}
+/* room for the dot: one blank character plus the one it sits in, so it never touches the network
+   label. Reserved only while the dots are switched on — off, the rows keep their space. */
+:root[data-unread-dot] #buffer-list li[data-net]{padding-right:2ch}
 /* selection has to cover the whole row, label included: gamja paints it on the <a>, which here no
    longer spans the row, so for these rows it moves onto the <li> and the label follows its color */
 #buffer-list li[data-net].active{background-color:var(--bl-active-bg,#fff)}
