@@ -1030,12 +1030,20 @@
 		if (!todo.length) return;
 		sending = true; refresh();
 		var i = 0;
+		// ⚠️ The composer is a CONTROLLED input and `handleSubmit` sends `this.state.text`, not the
+		// DOM value — so writing into the field is not enough. The `input` event has to be dispatched
+		// (it bubbles to the form, where gamja's onInput lives) and preact given a tick to store it,
+		// before the form is submitted.
 		(function step() {
 			if (i >= todo.length) { sending = false; hide(); return; }
-			input.value = todo[i++];
-			input.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+			var line = todo[i++];
+			input.value = line;
+			input.dispatchEvent(new Event('input', { bubbles: true }));
 			refresh();
-			setTimeout(step, GAP_MS);
+			setTimeout(function () {
+				input.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+				setTimeout(step, GAP_MS);
+			}, 60);
 		})();
 	}
 
