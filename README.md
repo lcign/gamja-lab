@@ -70,6 +70,14 @@ bundle fixes below, but it does not catch every case, so a manual retry is still
 **`/list` dialog** — sortable channel list (by user count or name), filter on name and topic,
 *shown / total* counter, click a row to join.
 
+**`/paste` — send a block of text as separate messages** — gamja's composer is a single-line
+`<input>`, so pasting code into it turns the newlines into spaces and sends one long message; gamja's
+own paste handler only looks at files. A dialog takes the text and sends **one line per message**,
+450 ms apart so the network does not read it as flooding, capped at 50 lines. It opens by typing
+`/paste`, or on its own when multi-line text is pasted into the composer. Sending goes through
+gamja's own form — the line is written into the composer and the form submitted, exactly what Enter
+does — so no state is reached into.
+
 **Buffer search (⌘F / Ctrl+F)** — gamja has none. A dialog that filters the lines already rendered
 in the active buffer: several words match in any order, case-insensitive, the matched term is
 highlighted, `↑↓` moves through the results and Enter jumps to the line in the buffer, which flashes

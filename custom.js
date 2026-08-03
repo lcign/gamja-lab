@@ -955,6 +955,112 @@
 	}, true);
 })();
 
+/* ===================== /paste : send multi-line text =====================
+   gamja's composer is a single-line <input>, so pasting a block of code into it silently turns the
+   newlines into spaces and one message goes out instead of twenty. gamja's own paste handler only
+   looks at files, so nothing else deals with this. Here a small dialog takes the text and sends it
+   one line per message, spaced out so the network does not treat it as flooding.
+   Opened either by typing `/paste` or by pasting multi-line text into the composer. */
+(function () {
+	var GAP_MS = 450, MAX = 50;
+	var backdrop = null, area = null, info = null, sendBtn = null, sending = false;
+
+	function composer() { return document.querySelector('#composer input[type=text]'); }
+
+	function lines(txt) {
+		return (txt || '').replace(/\r/g, '').split('\n')
+			.map(function (l) { return l.replace(/\s+$/, ''); })
+			.filter(function (l) { return l.length > 0; });
+	}
+
+	function build() {
+		if (backdrop) return;
+		backdrop = document.createElement('div');
+		backdrop.id = 'pasteBackdrop'; backdrop.className = 'hidden';
+		var panel = document.createElement('div');
+		panel.id = 'pastePanel';
+		var head = document.createElement('div'); head.className = 'lp-head';
+		var h = document.createElement('div'); h.className = 'lp-h'; h.textContent = 'Send as lines';
+		var close = document.createElement('button');
+		close.type = 'button'; close.className = 'lp-close'; close.textContent = '✕'; close.title = 'Close';
+		head.appendChild(h); head.appendChild(close);
+		area = document.createElement('textarea'); area.className = 'pp-area'; area.rows = 12;
+		area.placeholder = 'Paste here. One line = one message.';
+		var bar = document.createElement('div'); bar.className = 'pp-bar';
+		info = document.createElement('span'); info.className = 'pp-info';
+		sendBtn = document.createElement('button'); sendBtn.type = 'button'; sendBtn.className = 'lp-sort active';
+		bar.appendChild(info); bar.appendChild(sendBtn);
+		panel.appendChild(head); panel.appendChild(area); panel.appendChild(bar);
+		backdrop.appendChild(panel);
+		document.body.appendChild(backdrop);
+
+		close.addEventListener('click', hide);
+		backdrop.addEventListener('click', function (e) { if (e.target === backdrop) hide(); });
+		area.addEventListener('input', refresh);
+		sendBtn.addEventListener('click', send);
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && backdrop && !backdrop.classList.contains('hidden')) hide();
+		});
+	}
+
+	function refresh() {
+		var n = lines(area.value).length;
+		var over = n > MAX;
+		info.textContent = n + (n === 1 ? ' line' : ' lines') + (over ? ' — only the first ' + MAX + ' will be sent' : '');
+		info.classList.toggle('hot', over);
+		sendBtn.textContent = sending ? 'sending…' : 'Send ' + Math.min(n, MAX) + ' messages';
+		sendBtn.disabled = sending || n === 0;
+	}
+
+	function show(txt) {
+		build();
+		area.value = txt || '';
+		sending = false;
+		refresh();
+		backdrop.classList.remove('hidden');
+		area.focus();
+	}
+	function hide() { if (backdrop) backdrop.classList.add('hidden'); }
+
+	// one message per line, through gamja's own form: the value is written into the composer and the
+	// form is submitted, which is exactly what pressing Enter does — no reaching into its state.
+	function send() {
+		var input = composer(); if (!input || !input.form) return;
+		var todo = lines(area.value).slice(0, MAX);
+		if (!todo.length) return;
+		sending = true; refresh();
+		var i = 0;
+		(function step() {
+			if (i >= todo.length) { sending = false; hide(); return; }
+			input.value = todo[i++];
+			input.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+			refresh();
+			setTimeout(step, GAP_MS);
+		})();
+	}
+
+	// `/paste` in the composer opens the dialog instead of being sent as an unknown command
+	document.addEventListener('keydown', function (e) {
+		if (e.key !== 'Enter') return;
+		var input = composer();
+		if (!input || e.target !== input) return;
+		if (input.value.trim().toLowerCase() !== '/paste') return;
+		e.preventDefault(); e.stopPropagation();
+		input.value = '';
+		show('');
+	}, true);
+
+	// pasting several lines into the composer: offer the dialog rather than let them be flattened
+	document.addEventListener('paste', function (e) {
+		var input = composer();
+		if (!input || e.target !== input || !e.clipboardData) return;
+		var txt = e.clipboardData.getData('text/plain') || '';
+		if (lines(txt).length < 2) return;
+		e.preventDefault(); e.stopPropagation();
+		show(txt);
+	}, true);
+})();
+
 /* ===================== copy as lines =====================
    Copying a stretch of conversation came out as a single run of text. Rather than chase why the
    browser flattens it, the copy is rebuilt here: every logline the selection touches contributes one
