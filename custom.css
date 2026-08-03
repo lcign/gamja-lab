@@ -174,7 +174,7 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer a.timestamp,
 #buffer a.timestamp:hover,
 #buffer a.timestamp:active{text-decoration:none}
-#buffer a.timestamp{-webkit-user-drag:none;user-select:text;cursor:text}
+#buffer a.timestamp{user-select:text;cursor:text}
 
 /* repeated nick hidden: the two carets and the nick itself.
    ⚠️ `visibility:hidden`, not `display:none`: the space stays, so the text of a run keeps starting at

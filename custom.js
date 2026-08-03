@@ -1412,17 +1412,21 @@
 	}, true);
 })();
 
-/* ===================== select the timestamp =====================
-   Starting a selection on the timestamp did nothing, because an <a> is draggable: the gesture became a
-   link drag. `-webkit-user-drag:none` in the CSS was not enough on its own, so the drag is cancelled
-   at the source — with `dragstart` prevented, the pointer gesture falls back to selecting text. A
-   click on it still follows the link. */
+/* ===================== the timestamp is text, not a link =====================
+   An <a> is draggable, so a selection could not be started on the timestamp: the gesture turned into a
+   link drag. Cancelling `dragstart` and `-webkit-user-drag` both failed to help, so the anchor itself
+   is de-linked — the `href` is REMOVED, which is what actually makes it behave as text.
+   ⚠️ The element is left alone otherwise: replacing the <a> with a <span> would change the tag preact
+   expects at that position and upset its diff. `href` is a prop preact owns, so it comes back when the
+   line is re-rendered; the selector below only matches the ones that still have it, which keeps this
+   to almost nothing at rest. */
 (function () {
-	document.addEventListener('dragstart', function (e) {
-		var t = e.target;
-		var a = t && t.closest ? t.closest('#buffer a.timestamp') : null;
-		if (a) e.preventDefault();
-	}, true);
+	function strip() {
+		var as = document.querySelectorAll('#buffer a.timestamp[href]');
+		for (var i = 0; i < as.length; i++) as[i].removeAttribute('href');
+	}
+	setInterval(strip, 500);
+	strip();
 })();
 
 /* ===================== text shortcuts (:shrug) =====================
