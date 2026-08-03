@@ -1425,6 +1425,31 @@
 	];
 	function composer() { return document.querySelector('#composer input[type=text]'); }
 
+	/* Incoming text too: the token is swapped inside already-rendered lines. Each line is marked once,
+	   so only new ones are looked at; when preact re-renders a line the mark goes with it and the line
+	   is simply done again. Links are skipped — a token inside a URL is part of the address. The
+	   substitution is idempotent, since the art does not contain the token. */
+	function renderPass() {
+		var host = document.getElementById('buffer');
+		if (!host) return;
+		var lines = host.querySelectorAll('.logline:not([data-tok])'), i, j;
+		for (i = 0; i < lines.length; i++) {
+			var el = lines[i];
+			el.setAttribute('data-tok', '');
+			var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), nodes = [];
+			while (w.nextNode()) nodes.push(w.currentNode);
+			for (j = 0; j < nodes.length; j++) {
+				var n = nodes[j], p = n.parentNode;
+				if (!p || (p.closest && p.closest('a'))) continue;
+				var v = n.nodeValue, out = v;
+				TOKENS.forEach(function (tk) { out = out.replace(tk[0], tk[1]); });
+				if (out !== v) n.nodeValue = out;
+			}
+		}
+	}
+	setInterval(renderPass, 700);
+	renderPass();
+
 	document.addEventListener('keydown', function (e) {
 		if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
 		var input = composer();

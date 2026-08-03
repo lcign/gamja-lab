@@ -57,8 +57,9 @@ purpose.
 **Buffer search (⌘F / Ctrl+F)** — gamja has none. Filters the lines already rendered, `↑↓` walks the
 matches, Enter jumps to the line.
 
-**Text shortcuts** — `:shrug`, `:tableflip` and `:unflip` are expanded on send (`¯\_(ツ)_/¯` and
-company). Only outgoing text: what other people write is left as they wrote it.
+**Text shortcuts** — `:shrug`, `:tableflip` and `:unflip` become `¯\_(ツ)_/¯` and company, both when
+you send them and in messages as they are displayed, so a token someone else typed reads the same way.
+Tokens inside links are left alone.
 
 **Command history ↑/↓** in the composer, shell style. **Readable `/help`**, whose `<dt>`/`<dd>` pairs
 gamja never styles. **Working shortcuts on macOS**, where Option+letter yields a composed character
