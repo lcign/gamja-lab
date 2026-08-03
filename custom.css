@@ -116,6 +116,11 @@ html{font-size:calc(16px * var(--fs,1))}
 
 
 /* /paste dialog */
+/* header like any window: title centred, close on the right */
+#pastePanel .lp-head{display:grid;grid-template-columns:1.5rem 1fr 1.5rem;align-items:center;
+	padding:.75rem 1rem;border-bottom:1px solid var(--main-background)}
+#pastePanel .lp-h{grid-column:2;text-align:center}
+#pastePanel .lp-close{grid-column:3;justify-self:end}
 #pasteBackdrop{position:fixed;inset:0;z-index:10041;background:rgba(0,0,0,.55);display:flex;
 	align-items:center;justify-content:center}
 #pasteBackdrop.hidden{display:none}

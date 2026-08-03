@@ -962,7 +962,14 @@
    one line per message, spaced out so the network does not treat it as flooding.
    Opened either by typing `/paste` or by pasting multi-line text into the composer. */
 (function () {
-	var GAP_MS = 450, MAX = 50;
+	var GAP_MS = 450, MKEY = 'gamja_paste_max', MDEF = 50, MMIN = 1, MMAX = 200;
+	function maxLines() { var v = parseInt(localStorage.getItem(MKEY), 10); return v > 0 ? v : MDEF; }
+	function setMaxLines(x) {
+		var v = parseInt(x, 10); if (!(v > 0)) v = MDEF;
+		v = v < MMIN ? MMIN : (v > MMAX ? MMAX : v);
+		try { localStorage.setItem(MKEY, String(v)); } catch (e) {}
+		return v;
+	}
 	var backdrop = null, area = null, info = null, sendBtn = null, sending = false;
 
 	function composer() { return document.querySelector('#composer input[type=text]'); }
@@ -1004,11 +1011,10 @@
 	}
 
 	function refresh() {
-		var n = lines(area.value).length;
-		var over = n > MAX;
-		info.textContent = n + (n === 1 ? ' line' : ' lines') + (over ? ' — only the first ' + MAX + ' will be sent' : '');
+		var n = lines(area.value).length, cap = maxLines(), over = n > cap;
+		info.textContent = n + (n === 1 ? ' line' : ' lines') + (over ? ' — only the first ' + cap + ' will be sent' : '');
 		info.classList.toggle('hot', over);
-		sendBtn.textContent = sending ? 'sending…' : 'Send ' + Math.min(n, MAX) + ' messages';
+		sendBtn.textContent = sending ? 'sending…' : 'Send ' + Math.min(n, cap) + ' messages';
 		sendBtn.disabled = sending || n === 0;
 	}
 
@@ -1026,7 +1032,7 @@
 	// form is submitted, which is exactly what pressing Enter does — no reaching into its state.
 	function send() {
 		var input = composer(); if (!input || !input.form) return;
-		var todo = lines(area.value).slice(0, MAX);
+		var todo = lines(area.value).slice(0, maxLines());
 		if (!todo.length) return;
 		sending = true; refresh();
 		var i = 0;
@@ -1057,6 +1063,30 @@
 		input.value = '';
 		show('');
 	}, true);
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.pm-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom pm-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Max lines in /paste';
+		var inp = document.createElement('input');
+		inp.type = 'number'; inp.className = 'tp-num';
+		inp.min = String(MMIN); inp.max = String(MMAX); inp.step = '1'; inp.value = String(maxLines());
+		var warn = document.createElement('div');
+		warn.className = 'tp-warn';
+		warn.textContent = '⚠ One message per line: too many in a row and the network kills you for flooding.';
+		inp.addEventListener('change', function () { inp.value = String(setMaxLines(inp.value)); });
+		row.appendChild(lab); row.appendChild(inp);
+		panel.appendChild(row); panel.appendChild(warn);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(MKEY); } catch (e) {}
+		var inp = document.querySelector('.pm-row input[type=number]');
+		if (inp) inp.value = String(MDEF);
+	});
 
 	// pasting several lines into the composer: offer the dialog rather than let them be flattened
 	document.addEventListener('paste', function (e) {
