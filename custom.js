@@ -191,6 +191,7 @@
 			updatePin();
 			fs = 1; fsApply(); localStorage.removeItem(FSKEY); zshow();
 			localStorage.removeItem(RKEY); linp.value = String(ROWS_DEF); lshow();
+			localStorage.removeItem(TKEY); showTab('opt');
 			var inputs = panel.querySelectorAll('input[type=color]');
 			for (var i = 0; i < inputs.length; i++) inputs[i].value = VARS[i][2];
 			document.dispatchEvent(new CustomEvent('gamja-extra-reset'));
@@ -417,7 +418,9 @@
 	});
 
 	document.addEventListener('gamja-extra-reset', function () {
-		try { localStorage.removeItem(GKEY); } catch (e) {}
+		// `gamja_pins_side` is deliberately NOT cleared: which channels are pinned is data, not a
+		// setting, and Reset is about settings.
+		try { localStorage.removeItem(GKEY); localStorage.removeItem(SCRATCH_KEY); } catch (e) {}
 		var chk = document.querySelector('.gs-row input[type=checkbox]');
 		if (chk) chk.checked = false;
 		markPinned();

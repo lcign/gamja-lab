@@ -24,7 +24,9 @@ variable names and the injection points are the parts most likely to drift.
 ## What it adds
 
 **"Extra" panel** — a button injected next to *Settings* in the bouncer view, split into two tabs,
-**Options** and **Colors** (which tab was last open is remembered), with *Reset* below both:
+**Options** and **Colors** (which tab was last open is remembered), with *Reset* below both — it puts
+every setting back to its default, colours included, and deliberately leaves the pinned channels
+alone, since which channels are pinned is data rather than a setting:
 
 - **text zoom** A−/A+ (0.3× → 1.8×), applied through the `--fs` CSS variable
 - **max rows in the `/list` dialog** (default 2000, range 100–50000) with a warning above 5000
