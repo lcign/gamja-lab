@@ -1577,14 +1577,18 @@
 			else el.removeAttribute('data-samenick');
 			prev = isMsg ? nick : null;
 
-			if (wrap && isMsg && nick) {
+			/* The same measurement serves two purposes: the hanging indent for a wrapped message, and
+			   the space that replaces the hidden timestamp and nick on a run — those are removed from
+			   the layout (see custom.css), so their column has to be given back here. A run needs no
+			   negative indent, since its first line already starts in the text column. */
+			var same = el.hasAttribute('data-samenick');
+			if (isMsg && nick && (wrap || same)) {
 				var ts = el.querySelector('a.timestamp');
-				var n = (ts ? ts.textContent.trim().length : 0) + nick.length + 4;
-				var want = n + 'ch';
-				if (el.style.paddingLeft !== want) {
-					el.style.paddingLeft = want;
-					el.style.textIndent = '-' + want;
-				}
+				var tsLen = ts ? ts.textContent.trim().length : (same ? 8 : 0);
+				var n = tsLen + nick.length + 4;
+				var pad = n + 'ch', ind = same ? '0' : '-' + n + 'ch';
+				if (el.style.paddingLeft !== pad) el.style.paddingLeft = pad;
+				if (el.style.textIndent !== ind) el.style.textIndent = ind;
 			} else if (el.style.paddingLeft) {
 				el.style.paddingLeft = '';
 				el.style.textIndent = '';
