@@ -71,9 +71,12 @@ html{font-size:calc(16px * var(--fs,1))}
    columns were tall again, so on a wide window the panel widens to FOUR — the options pane keeps one
    row per setting, since those rows are label + control and read better full width. */
 #themePanel .tp-pane{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
+/* ⚠️ The width follows the TAB, not the window: at 900px the Options rows (label on the left, control
+   on the right) were stretched across half a screen with nothing in between. The wide panel and the
+   four colour columns only apply while Colors is showing — custom.js puts `wide` on the panel. */
 @media(min-width:1100px){
-	#themePanel{width:900px}
-	#themePanel .tp-pane.tp-colors{grid-template-columns:repeat(4,1fr)}
+	#themePanel.wide{width:900px}
+	#themePanel.wide .tp-pane.tp-colors{grid-template-columns:repeat(4,1fr)}
 	#themePanel .tp-pane.tp-options{grid-template-columns:1fr}
 }
 #themePanel .tp-pane.hidden{display:none}

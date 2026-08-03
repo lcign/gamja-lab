@@ -127,6 +127,7 @@
 			paneCol.classList.toggle('hidden', !col);
 			tabOpt.classList.toggle('active', !col);
 			tabCol.classList.toggle('active', col);
+			panel.classList.toggle('wide', col);        // only the colours need the wide layout
 			try { localStorage.setItem(TKEY, col ? 'col' : 'opt'); } catch (e) {}
 		}
 		tabOpt.addEventListener('click', function () { showTab('opt'); });
