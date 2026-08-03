@@ -1412,6 +1412,19 @@
 	}, true);
 })();
 
+/* ===================== select the timestamp =====================
+   Starting a selection on the timestamp did nothing, because an <a> is draggable: the gesture became a
+   link drag. `-webkit-user-drag:none` in the CSS was not enough on its own, so the drag is cancelled
+   at the source — with `dragstart` prevented, the pointer gesture falls back to selecting text. A
+   click on it still follows the link. */
+(function () {
+	document.addEventListener('dragstart', function (e) {
+		var t = e.target;
+		var a = t && t.closest ? t.closest('#buffer a.timestamp') : null;
+		if (a) e.preventDefault();
+	}, true);
+})();
+
 /* ===================== text shortcuts (:shrug) =====================
    `:shrug` and friends are expanded when the message is sent. Only outgoing text is touched — what
    other people write is left exactly as they wrote it.
