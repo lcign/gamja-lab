@@ -1412,6 +1412,35 @@
 	}, true);
 })();
 
+/* ===================== text shortcuts (:shrug) =====================
+   `:shrug` and friends are expanded when the message is sent. Only outgoing text is touched — what
+   other people write is left exactly as they wrote it.
+   ⚠️ The composer is controlled, so the expansion has to go in through an `input` event and be given a
+   tick before the form is submitted, the same as /paste. */
+(function () {
+	var TOKENS = [
+		[/:shrug:?/gi,     '¯\\_(ツ)_/¯'],
+		[/:tableflip:?/gi, '(╯°□°）╯︵ ┻━┻'],
+		[/:unflip:?/gi,    '┬─┬ ノ( ゜-゜ノ)']
+	];
+	function composer() { return document.querySelector('#composer input[type=text]'); }
+
+	document.addEventListener('keydown', function (e) {
+		if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+		var input = composer();
+		if (!input || e.target !== input) return;
+		var v = input.value, out = v;
+		TOKENS.forEach(function (p) { out = out.replace(p[0], p[1]); });
+		if (out === v) return;
+		e.preventDefault(); e.stopPropagation();
+		input.value = out;
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		setTimeout(function () {
+			input.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+		}, 40);
+	}, true);
+})();
+
 /* ===================== hide repeated nicks =====================
    Consecutive messages from the same person keep only the first `<nick>`, which makes a back-and-forth
    much easier to read. gamja renders a line as `<span.nick-caret>` `<a.nick>` `<span.nick-caret>` and
