@@ -978,6 +978,100 @@
 	}, true);
 })();
 
+/* ===================== image preview (modal) =====================
+   Clicking an image link opens it in a modal instead of a browser tab. Off by default.
+   ⚠️ This needs `img-src` in the page's CSP: gamja ships `default-src 'self'` and nothing else, so
+   remote images are blocked outright and no amount of JS gets around it. index.html here allows
+   `https:` and `data:` — http is left out on purpose. Nothing is preloaded: the only request is the
+   image you click, so the buffer scrolls exactly as fast as before. */
+(function () {
+	var KEY = 'gamja_img_modal';
+	var IMG_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svgz?)(\?|#|$)/i;
+	var backdrop = null, imgEl = null, capEl = null, openEl = null, spinEl = null;
+
+	function on() { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
+
+	function build() {
+		if (backdrop) return;
+		backdrop = document.createElement('div');
+		backdrop.id = 'imgBackdrop'; backdrop.className = 'hidden';
+		var panel = document.createElement('div'); panel.id = 'imgPanel';
+		var head = document.createElement('div'); head.className = 'ip-head';
+		capEl = document.createElement('span'); capEl.className = 'ip-cap';
+		openEl = document.createElement('a'); openEl.className = 'ip-open';
+		openEl.target = '_blank'; openEl.rel = 'noreferrer noopener'; openEl.textContent = 'open';
+		var close = document.createElement('button');
+		close.type = 'button'; close.className = 'lp-close'; close.textContent = '✕'; close.title = 'Close';
+		head.appendChild(capEl); head.appendChild(openEl); head.appendChild(close);
+		spinEl = document.createElement('div'); spinEl.className = 'ip-note'; spinEl.textContent = 'loading…';
+		imgEl = document.createElement('img'); imgEl.className = 'ip-img'; imgEl.alt = '';
+		imgEl.addEventListener('load', function () { spinEl.textContent = ''; imgEl.classList.remove('hidden'); });
+		imgEl.addEventListener('error', function () {
+			spinEl.textContent = 'could not be loaded — use “open” to see it in the browser';
+			imgEl.classList.add('hidden');
+		});
+		panel.appendChild(head); panel.appendChild(spinEl); panel.appendChild(imgEl);
+		backdrop.appendChild(panel);
+		document.body.appendChild(backdrop);
+
+		close.addEventListener('click', hide);
+		backdrop.addEventListener('click', function (e) { if (e.target === backdrop) hide(); });
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && backdrop && !backdrop.classList.contains('hidden')) hide();
+		});
+	}
+
+	function show(url) {
+		build();
+		capEl.textContent = url.replace(/^https?:\/\//, '').slice(0, 90);
+		capEl.title = url;
+		openEl.href = url;
+		spinEl.textContent = 'loading…';
+		imgEl.classList.add('hidden');
+		imgEl.src = url;
+		backdrop.classList.remove('hidden');
+	}
+	function hide() {
+		if (!backdrop) return;
+		backdrop.classList.add('hidden');
+		imgEl.removeAttribute('src');            // stops a download still in flight
+	}
+
+	// one delegated listener, nothing per message and no observer
+	document.addEventListener('click', function (e) {
+		if (!on() || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+		var a = e.target && e.target.closest ? e.target.closest('#buffer a') : null;
+		if (!a) return;
+		var href = a.href || '';
+		if (href.indexOf('https://') !== 0 || !IMG_RE.test(href)) return;
+		e.preventDefault();
+		show(href);
+	});
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.im-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom im-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Preview images in a modal';
+		var chk = document.createElement('input');
+		chk.type = 'checkbox'; chk.checked = on(); chk.style.flex = 'none';
+		chk.title = 'Off: image links open in the browser, and the page requests nothing. On: the image is fetched by gamja when you click it.';
+		chk.addEventListener('change', function () {
+			try { localStorage.setItem(KEY, chk.checked ? '1' : '0'); } catch (e) {}
+		});
+		row.appendChild(lab); row.appendChild(chk);
+		panel.appendChild(row);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(KEY); } catch (e) {}
+		var chk = document.querySelector('.im-row input[type=checkbox]');
+		if (chk) chk.checked = false;
+	});
+})();
+
 /* ===================== /paste : send multi-line text =====================
    gamja's composer is a single-line <input>, so pasting a block of code into it silently turns the
    newlines into spaces and one message goes out instead of twenty. gamja's own paste handler only

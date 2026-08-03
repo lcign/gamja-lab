@@ -72,6 +72,18 @@ bundle fixes below, but it does not catch every case, so a manual retry is still
 **`/list` dialog** — sortable channel list (by user count or name), filter on name and topic,
 *shown / total* counter, click a row to join.
 
+**Image preview in a modal** (*Options*, off by default) — clicking a link that ends in an image
+extension opens it in a modal, scaled to fit the window (88% wide, 82% tall, never blown up past its
+own size), with the URL and an *open* link for the browser. Closing it also aborts a download still
+in flight.
+
+⚠️ This one is **not** free of consequences, which is why it ships off: gamja's CSP is
+`default-src 'self'` with no `img-src`, so remote images are blocked and the modal cannot work until
+the policy allows them — `index.html.example` here adds `img-src 'self' https: data:`. With that in
+place, clicking an image means **gamja** fetches it, so your IP reaches that host. Nothing is ever
+preloaded: only the image you click, one at a time, so the buffer scrolls exactly as before. Inline
+thumbnails were deliberately not implemented — those would fetch from anyone who posts a link.
+
 **`/paste` — send a block of text as separate messages** — gamja's composer is a single-line
 `<input>`, so pasting code into it turns the newlines into spaces and sends one long message; gamja's
 own paste handler only looks at files. A dialog takes the text and sends **one line per message**,

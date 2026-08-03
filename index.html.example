@@ -1,7 +1,7 @@
 <!-- Example: gamja's index.html with the customizations hooked in.
      Both tags go AFTER the bundle. Bump ?v=N whenever you change the files. -->
 <!DOCTYPE html><meta charset=utf-8>
-<meta http-equiv=Content-Security-Policy content="default-src 'self'; frame-src 'none'; object-src 'none'; connect-src *;">
+<meta http-equiv=Content-Security-Policy content="default-src 'self'; img-src 'self' https: data:; frame-src 'none'; object-src 'none'; connect-src *;">
 <title>gamja IRC client</title>
 <link rel=stylesheet href=build.HASH.css>
 <link rel=stylesheet href="custom.css?v=1">
