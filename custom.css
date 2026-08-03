@@ -100,10 +100,14 @@ html{font-size:calc(16px * var(--fs,1))}
 #themePanel .tp-zbtn{background:var(--button-background);color:var(--button-color);border:1px solid var(--button-border);
 	border-radius:6px;min-width:30px;height:26px;line-height:1;cursor:pointer;font-size:12px;font-weight:700}
 #themePanel .tp-zbtn:hover{background:var(--button-background-hover)}
-#themePanel .tp-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;font-size:12px;cursor:pointer}
-#themePanel .tp-row > span{flex:1;min-width:0;overflow-wrap:break-word;line-height:1.25}
-#themePanel .tp-row input[type=color]{flex:none}
-#themePanel .tp-row input[type=color]{width:34px;height:22px;border:none;background:none;padding:0;cursor:pointer}
+/* a colour row is the label drawn WITH its own colours, then the swatches: background first, text
+   second. The empty slot keeps the swatches lined up on rows that only expose one of the two. */
+#themePanel .tp-crow{display:flex;align-items:center;gap:5px;margin:3px 0}
+#themePanel .tp-prev{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+	font-size:12px;line-height:1.3;padding:3px 6px;border-radius:4px}
+#themePanel .tp-sw{flex:none;width:24px;height:20px;border:none;background:none;padding:0;
+	cursor:pointer;border-radius:3px}
+#themePanel .tp-sw.empty{visibility:hidden}
 #themePanel .tp-icon{flex:none;width:3.4em;text-align:center;background:var(--main-background);
 	color:var(--main-color);border:1px solid var(--expander-border,#6c6c6c);border-radius:6px;
 	padding:3px 4px;font-size:13px}

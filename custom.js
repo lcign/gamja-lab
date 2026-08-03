@@ -33,53 +33,67 @@
 	}
 
 	var GL = 'Channel list (left)', GR = 'Member list (right)', GM = 'Messages',
-		GB = 'Buttons and controls', GO = 'Other';
-	/* Fourth field = group, rendered as a heading in the panel. Order matters, and the groups follow
-	   WHERE the color shows up rather than what the variable is called: that was the flaw of the
-	   flat list, where "Side panels" and "Channel list background" looked like the same thing.
-	   ⚠️ VARS order must match the controls in the DOM: Reset realigns them by index. */
-	var VARS = [
-		['Background',              '--bl-background',      '#131618',   GL],
-		['Text',                    '--bl-color',           '#f8f9fa',   GL],
-		['Active channel back.',    '--bl-active-bg',       '#ffffff',   GL],
-		['Active channel text',     '--bl-active-color',    '#131618',   GL],
-		['Channel activity',        '--activity-color',     '#d9a441',   GL],
-		['Mention text',            '--highlight-color',    '#ffe08a',   GL],
-		['Mention background',      '--highlight-bg',       '#463a10',   GL],
-		['Pin 📌',                  '--pin-color',          PIN_DEFAULT, GL],
+		GB = 'Buttons and controls';
 
-		['Background',              '--sidebar-background', '#131618',   GR],
-		['Operators, online',       '--green',              '#53b266',   GR],
+	// default of every colour variable the panel drives
+	var DEF = {
+		'--bl-background': '#131618', '--bl-color': '#f8f9fa',
+		'--bl-active-bg': '#ffffff', '--bl-active-color': '#131618',
+		'--activity-color': '#d9a441', '--highlight-color': '#ffe08a', '--highlight-bg': '#463a10',
+		'--pin-color': PIN_DEFAULT, '--buffer-button-background-hover': '#131618',
+		'--sidebar-background': '#131618', '--green': '#53b266',
+		'--main-background': '#212529', '--main-color': '#f8f9fa',
+		'--link-color': '#53b266', '--timestamp-color': '#979797',
+		'--gray': '#979797', '--red': '#fb615b',
+		'--button-background': '#282879', '--button-background-hover': '#00007c',
+		'--button-color': '#eff7ef', '--button-border': '#131618',
+		'--danger-button-background': '#b20000', '--danger-button-background-hover': '#ff0000',
+		'--danger-button-color': '#eff7ef', '--danger-button-border': '#131618',
+		'--expander-background': '#424446', '--expander-background-hover': '#2a2d2f',
+		'--expander-border': '#6c6c6c', '--outline-color': '#6e7681'
+	};
 
-		['Background',              '--main-background',    '#212529',   GM],
-		['Text',                    '--main-color',         '#f8f9fa',   GM],
-		['Links',                   '--link-color',         '#53b266',   GM],
-		['Timestamp',               '--timestamp-color',    '#979797',   GM],
+	/* One row per thing you actually look at, not per variable: the label is drawn WITH the colours it
+	   describes, so the effect is visible without hunting for it. `bg` and `fg` are what the preview
+	   uses; `edit` says which of the two get a swatch — the other is context (a text colour still needs
+	   to be seen against its own background). This also halves the panel, since a background and its
+	   text share a row. */
+	var ROWS = [
+		[GL, 'Channel list',      '--bl-background',       '--bl-color',            'both'],
+		[GL, 'Selected channel',  '--bl-active-bg',        '--bl-active-color',     'both'],
+		[GL, 'Mention',           '--highlight-bg',        '--highlight-color',     'both'],
+		[GL, 'Channel activity',  '--bl-background',       '--activity-color',      'fg'],
+		[GL, 'Pin 📌',            '--bl-background',       '--pin-color',           'fg'],
+		[GL, 'Row hover',         '--buffer-button-background-hover', '--bl-color', 'bg'],
 
-		['Buttons',                 '--button-background',  '#282879',   GB],
-		['Buttons hover',           '--button-background-hover', '#00007c', GB],
-		['Button text',             '--button-color',       '#eff7ef',   GB],
-		['Button border',           '--button-border',      '#131618',   GB],
-		['Danger button',           '--danger-button-background', '#b20000', GB],
-		['Danger hover',            '--danger-button-background-hover', '#ff0000', GB],
-		['Danger text',             '--danger-button-color', '#eff7ef',  GB],
-		['Danger border',           '--danger-button-border', '#131618', GB],
-		['Expander',                '--expander-background', '#424446', GB],
-		['Expander hover',          '--expander-background-hover', '#2a2d2f', GB],
-		['Expander border',         '--expander-border',    '#6c6c6c',   GB],
-		['Focus ring',              '--outline-color',      '#6e7681',   GB],
+		[GR, 'Member list',       '--sidebar-background',  '--main-color',          'bg'],
+		[GR, 'Operators, online', '--sidebar-background',  '--green',               'fg'],
 
-		['Alert (errors, offline)', '--red',                '#fb615b',   GO],
-		['Muted text',              '--gray',               '#979797',   GO],
-		['Buffer row hover',        '--buffer-button-background-hover', '#131618', GO]
+		[GM, 'Messages',          '--main-background',     '--main-color',          'both'],
+		[GM, 'Links',             '--main-background',     '--link-color',          'fg'],
+		[GM, 'Timestamp',         '--main-background',     '--timestamp-color',     'fg'],
+		[GM, 'Muted text',        '--main-background',     '--gray',                'fg'],
+		[GM, 'Alert, offline',    '--main-background',     '--red',                 'fg'],
+
+		[GB, 'Buttons',           '--button-background',   '--button-color',        'both', '--button-border'],
+		[GB, 'Buttons hover',     '--button-background-hover', '--button-color',    'bg'],
+		[GB, 'Button border',     '--main-background',     '--button-border',       'fg'],
+		[GB, 'Danger buttons',    '--danger-button-background', '--danger-button-color', 'both', '--danger-button-border'],
+		[GB, 'Danger hover',      '--danger-button-background-hover', '--danger-button-color', 'bg'],
+		[GB, 'Danger border',     '--main-background',     '--danger-button-border', 'fg'],
+		[GB, 'Expander',          '--expander-background', '--main-color',          'bg', '--expander-border'],
+		[GB, 'Expander hover',    '--expander-background-hover', '--main-color',    'bg'],
+		[GB, 'Expander border',   '--main-background',     '--expander-border',     'fg'],
+		[GB, 'Focus ring',        '--main-background',     '--outline-color',       'fg']
 	];
+
 	var KEY = 'gamja_theme';
 	var root = document.documentElement;
 	var backdrop = null, panel = null;
 
 	function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
 	function save(o) { localStorage.setItem(KEY, JSON.stringify(o)); }
-	function apply(o) { VARS.forEach(function (v) { if (o[v[1]]) root.style.setProperty(v[1], o[v[1]]); }); }
+	function apply(o) { for (var k in DEF) { if (o[k]) root.style.setProperty(k, o[k]); } }
 
 	var saved = load();
 	apply(saved);
@@ -166,34 +180,55 @@
 		document.dispatchEvent(new CustomEvent('gamja-extra-panel', { detail: { panel: paneOpt } }));
 
 		var lastGroup = null;
-		VARS.forEach(function (v) {
-			if (v[3] !== lastGroup) {          // intestazione di gruppo, a riga intera nella griglia
-				lastGroup = v[3];
+		ROWS.forEach(function (r) {
+			if (r[0] !== lastGroup) {
+				lastGroup = r[0];
 				var sec = document.createElement('div');
-				sec.className = 'tp-sec'; sec.textContent = v[3];
+				sec.className = 'tp-sec'; sec.textContent = r[0];
 				paneCol.appendChild(sec);
 			}
-			var row = document.createElement('label'); row.className = 'tp-row';
-			var span = document.createElement('span'); span.textContent = v[0];
-			var inp = document.createElement('input'); inp.type = 'color'; inp.value = saved[v[1]] || v[2];
-			inp.addEventListener('input', function () {
-				root.style.setProperty(v[1], inp.value);
-				var o = load(); o[v[1]] = inp.value; save(o);
-				if (v[1] === '--pin-color') updatePin();
-			});
-			row.appendChild(span); row.appendChild(inp); paneCol.appendChild(row);
+			var row = document.createElement('div'); row.className = 'tp-crow';
+			var prev = document.createElement('span'); prev.className = 'tp-prev';
+			prev.textContent = r[1];
+			prev.style.backgroundColor = 'var(' + r[2] + ')';
+			prev.style.color = 'var(' + r[3] + ')';
+			if (r[5]) prev.style.border = '1px solid var(' + r[5] + ')';
+			row.appendChild(prev);
+
+			function swatch(name, what) {
+				var inp = document.createElement('input');
+				inp.type = 'color'; inp.className = 'tp-sw';
+				inp.value = saved[name] || DEF[name];
+				inp.setAttribute('data-var', name);
+				inp.title = what + ' — ' + name;
+				inp.addEventListener('input', function () {
+					root.style.setProperty(name, inp.value);
+					var o = load(); o[name] = inp.value; save(o);
+					if (name === '--pin-color') updatePin();
+					// the same variable can appear in more than one preview, so keep the twins in step
+					var twins = paneCol.querySelectorAll('input[data-var="' + name + '"]');
+					for (var i = 0; i < twins.length; i++) twins[i].value = inp.value;
+				});
+				return inp;
+			}
+			var slot = document.createElement('span'); slot.className = 'tp-sw empty';
+			if (r[4] === 'both') { row.appendChild(swatch(r[2], 'background')); row.appendChild(swatch(r[3], 'text')); }
+			else if (r[4] === 'bg') { row.appendChild(swatch(r[2], 'background')); row.appendChild(slot); }
+			else { row.appendChild(slot); row.appendChild(swatch(r[3], 'text')); }
+			paneCol.appendChild(row);
 		});
 		var reset = document.createElement('button');
 		reset.type = 'button'; reset.className = 'tp-reset'; reset.textContent = 'Reset';
 		reset.addEventListener('click', function () {
-			VARS.forEach(function (v) { root.style.removeProperty(v[1]); });
+			for (var k in DEF) root.style.removeProperty(k);
 			localStorage.removeItem(KEY);
 			updatePin();
 			fs = 1; fsApply(); localStorage.removeItem(FSKEY); zshow();
 			localStorage.removeItem(RKEY); linp.value = String(ROWS_DEF); lshow();
 			localStorage.removeItem(TKEY); showTab('opt');
+			// by name, not by position: several previews can share a variable
 			var inputs = panel.querySelectorAll('input[type=color]');
-			for (var i = 0; i < inputs.length; i++) inputs[i].value = VARS[i][2];
+			for (var i = 0; i < inputs.length; i++) inputs[i].value = DEF[inputs[i].getAttribute('data-var')];
 			document.dispatchEvent(new CustomEvent('gamja-extra-reset'));
 		});
 		panel.appendChild(reset);
