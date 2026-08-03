@@ -56,6 +56,7 @@
 		['Timestamp',               '--timestamp-color',    '#979797',   GM],
 
 		['Buttons',                 '--button-background',  '#282879',   GO],
+		['Buttons hover',           '--button-background-hover', '#00007c', GO],
 		['Alert (errors, offline)', '--red',                '#fb615b',   GO]
 	];
 	var KEY = 'gamja_theme';
