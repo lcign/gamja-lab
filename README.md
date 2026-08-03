@@ -57,6 +57,10 @@ purpose.
 **Buffer search (⌘F / Ctrl+F)** — gamja has none. Filters the lines already rendered, `↑↓` walks the
 matches, Enter jumps to the line.
 
+**Hide repeated nicks** (*Options*) — a run of messages from the same person keeps the nick and the
+timestamp on the first line only; anything that is not a message breaks the run. Hidden with
+`visibility`, so the text stays in its column.
+
 **Text shortcuts** — `:shrug`, `:tableflip` and `:unflip` become `¯\_(ツ)_/¯` and company, both when
 you send them and in messages as they are displayed, so a token someone else typed reads the same way.
 Tokens inside links are left alone.

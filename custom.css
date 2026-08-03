@@ -181,7 +181,8 @@ html{font-size:calc(16px * var(--fs,1))}
    matches by construction, with no measuring. Hidden text is not rendered, so it stays out of
    selections and out of the copy handler, which reads innerText. */
 #buffer .logline[data-samenick] .nick-caret,
-#buffer .logline[data-samenick] a.nick{visibility:hidden}
+#buffer .logline[data-samenick] a.nick,
+#buffer .logline[data-samenick] a.timestamp{visibility:hidden}
 
 /* image preview modal: the picture is scaled to fit the window with room to spare (88% wide, 82%
    tall) and never enlarged past its own size */
