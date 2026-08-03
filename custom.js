@@ -966,8 +966,11 @@
 		var sel = window.getSelection();
 		if (!sel || sel.isCollapsed || !sel.rangeCount) return;
 		var buf = document.getElementById('buffer');
-		if (!buf || !buf.contains(sel.anchorNode) || !buf.contains(sel.focusNode)) return;
-
+		if (!buf) return;
+		// ⚠️ No check on where the selection STARTS: dragging over a long block routinely begins or
+		// ends outside #buffer (in the header, or past the last line), and requiring both ends inside
+		// it made the handler bail out exactly on the selections that need it. What scopes this
+		// instead is the count of loglines the range touches.
 		var range = sel.getRangeAt(0), lines = [], els = buf.querySelectorAll('.logline'), i, el;
 		for (i = 0; i < els.length; i++) {
 			el = els[i];
