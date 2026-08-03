@@ -1,186 +1,90 @@
 # gamja — customizations
 
-A set of customizations for [gamja](https://codeberg.org/emersion/gamja), the web IRC client, as
-used in front of a [soju](https://codeberg.org/emersion/soju) bouncer. Everything in `custom.css` +
-`custom.js` is **zero-invasive**: no changes to gamja's bundle, no `WebSocket` wrapper, no
-`MutationObserver` watching message rendering.
-
-The one exception is the `/list` dialog, which needs **a small hook inside the bundle** (documented
-below). Without it everything else still works and the dialog simply never opens.
-
+Customizations for [gamja](https://codeberg.org/emersion/gamja), the web IRC client, as used in front
+of a [soju](https://codeberg.org/emersion/soju) bouncer. `custom.css` + `custom.js` sit beside gamja's
+bundle and never touch it, so they survive a rebuild — the one exception is the `/list` hook below.
 Desktop only.
 
-**Tested against gamja `master` at commit [`cdf94d6`](https://codeberg.org/emersion/gamja/commit/cdf94d6)
-(2026-07-24).** Follow `master`, not the tags: the latest release, `v1.0.0-beta.11`, dates from
-2025-03-20 and is 54 commits behind. Note that these customizations hook gamja's DOM and CSS
-variables rather than a stable API, so a newer `master` may move things underneath them — the CSS
-variable names and the injection points are the parts most likely to drift.
+**Tested against gamja `master` at [`cdf94d6`](https://codeberg.org/emersion/gamja/commit/cdf94d6)
+(2026-07-24).** Follow `master`, not the tags: the latest release, `v1.0.0-beta.11`, is from 2025-03-20
+and 54 commits behind. These files hook gamja's DOM and CSS variables, not a stable API, so a newer
+`master` can move things underneath them.
 
 ![gamja with these customizations](screenshot.png)
 
-*Pinned channels at the top of the list, the 📌 next to the user count, unread dots on `##anime` and
-`#archlinux`, JetBrains Mono and the dark theme.*
-
 ## What it adds
 
-**"Extra" panel** — a button injected next to *Settings* in the bouncer view, split into two tabs,
-**Options** and **Colors** (which tab was last open is remembered), with *Reset* below both — it puts
-every setting back to its default, colours included, and deliberately leaves the pinned channels
-alone, since which channels are pinned is data rather than a setting:
+<img src="panel-options.png" alt="Extra panel, Options tab" width="330"> <img src="panel-colors.png" alt="Extra panel, Colors tab" width="330">
 
-- **text zoom** A−/A+ (0.3× → 1.8×), applied through the `--fs` CSS variable
-- **max rows in the `/list` dialog** (default 2000, range 100–50000) with a warning above 5000
-- **unread dot**: a dot next to channels with activity or a mention, on by default, plus **which side
-  it sits on** — end of the row by default, or in front of the name. Either way every row reserves
-  the same strip for it, so the list keeps its alignment and the sidebar width does not change with
-  which channels are active
+**"Extra" panel** — a button next to *Settings*, split into **Options** and **Colors** tabs. *Reset*
+puts every setting and colour back to its default; pinned channels are left alone, being data rather
+than a setting.
 
-The panel is two columns wide: fourteen colors in a single column turned it into a very tall strip.
-The grid sits on the panel itself, so blocks that add their own rows through `gamja-extra-panel` get
-full-width placement for free.
-- **theme colors**, grouped by **where you see them** rather than by what the variable is called —
-  *Channel list (left)*, *Member list (right)*, *Messages*, *Other*. The flat list used to put
-  *Side panels* right next to *Channel list background* as if they were the same thing.
+- **29 theme colours**, grouped by where you see them, including what gamja hardcodes: the selected
+  channel, links (gamja paints them with the unread colour, so the two could never differ),
+  timestamps, channel activity, the button/danger/expander sets, the focus ring
+- text zoom, `/list` row cap, `/paste` line cap, nick length in the member list
+- toggles: group shared channel names, unread dot and its side, image preview, link confirmation
 
-  Beyond what gamja exposes: `--bl-background` / `--bl-color` (background and text of the left
-  channel list *only*, which gamja otherwise shares with the member list through
-  `--sidebar-background`), `--bl-active-bg` / `--bl-active-color` (the selected channel,
-  **hardcoded** to `#fff` in gamja), `--link-color` for links in messages — gamja paints those with
-  `--green`, the very same variable as unread, so the two could never be set apart — and
-  `--timestamp-color` for the time next to each message.
-  `--green` is left with what it actually still drives, operators and online status, and `--red`
-  is *Alert*.
+**Channel list** — 📌 in the member list header pins the open channel to the top; networks are marked
+`⚯`, the bouncer row 🐇. **Private messages** get their own block under the pinned channels, sorted by
+nick. Optionally, **names shared across networks** are lifted out into a *shared names* group, each row
+reading `#channel@network`. A dot marks channels with activity, on either side, in a strip every row
+reserves so the width never shifts with traffic. Long nicks are shortened, the full one staying in the
+hover title.
 
-<img src="extra-options.png" alt="The Extra panel, Options tab" width="330">
-<img src="extra-colors.png" alt="The Extra panel, Colors tab" width="330">
+**Buffer reload (⟳)** in the header, in front of the topic. A channel sometimes renders empty right
+after joining and switching away and back brings it back; the button does that round trip by clicking
+gamja's own sidebar links, bouncing off a scratch buffer if one exists (`/query reload`) so nothing
+real is marked read.
 
-**Channel pinning (senpai-style)** — a 📌 in the member list header, next to *N users*: pins the open
-channel and floats it to the top of the channel list, right below the bouncer row, with a 📌 in front
-of its name.
+**`/paste`** — gamja's composer is a single-line `<input>`, so a pasted block goes out as one message
+with the newlines turned into spaces. The dialog sends **one line per message**, 450 ms apart to stay
+clear of flood limits. Opens by typing `/paste` (Tab completes it) or by itself when multi-line text is
+pasted. Copying several lines out of a buffer also gets its newlines back.
 
-**Buffer reload (⟳)** — a button in the buffer header, in front of the channel topic. Every so often a
-channel renders empty right after joining: the buffer is there, the messages are not. Switching to
-another buffer and back brings them in, and this button does exactly that — it clicks gamja's own
-sidebar links and returning, with a *reloading…* notice over the buffer while it happens.
+**Image preview and link confirmation**, both off by default — an image link opens in a modal scaled
+to the window; other links can ask first, showing the host on its own line above the full address.
+⚠️ The preview needs `img-src` in the page's CSP (see `index.html.example`): gamja ships
+`default-src 'self'`, which blocks remote images outright. Allowed, clicking an image means gamja
+fetches it, so your IP reaches that host. Nothing is preloaded, and inline thumbnails were left out on
+purpose.
 
-The bounce needs a **real** buffer: gamja switches only between buffers it owns, and a hand-made
-`<a>` carries none of its click handlers, so a synthetic "empty page" is not possible without a
-bundle hook. Targets are tried in this order: a **scratch buffer** — open one once with
-`/query reload` and it sits in the sidebar doing nothing, so the round trip marks nothing real as
-read (rename it through `localStorage` key `gamja_reload_scratch`) — then the **server row of the
-same network**, then any other buffer. The underlying defect (no history fetch on an empty buffer) is one of the optional
-bundle fixes below, but it does not catch every case, so a manual retry is still worth having.
+**`/list` dialog** — sortable channel list, filter on name and topic, click a row to join.
 
-**`/list` dialog** — sortable channel list (by user count or name), filter on name and topic,
-*shown / total* counter, click a row to join.
+**Buffer search (⌘F / Ctrl+F)** — gamja has none. Filters the lines already rendered, `↑↓` walks the
+matches, Enter jumps to the line.
 
-**Image preview in a modal** (*Options*, off by default) — clicking a link that ends in an image
-extension opens it in a modal, scaled to fit the window (88% wide, 82% tall, never blown up past its
-own size), with the URL and an *open* link for the browser. Closing it also aborts a download still
-in flight.
-
-⚠️ This one is **not** free of consequences, which is why it ships off: gamja's CSP is
-`default-src 'self'` with no `img-src`, so remote images are blocked and the modal cannot work until
-the policy allows them — `index.html.example` here adds `img-src 'self' https: data:`. With that in
-place, clicking an image means **gamja** fetches it, so your IP reaches that host. Nothing is ever
-preloaded: only the image you click, one at a time, so the buffer scrolls exactly as before. Inline
-thumbnails were deliberately not implemented — those would fetch from anyone who posts a link.
-
-**`/paste` — send a block of text as separate messages** — gamja's composer is a single-line
-`<input>`, so pasting code into it turns the newlines into spaces and sends one long message; gamja's
-own paste handler only looks at files. A dialog takes the text and sends **one line per message**,
-450 ms apart so the network does not read it as flooding, capped at 50 lines. It opens by typing
-`/paste`, or on its own when multi-line text is pasted into the composer. Sending goes through
-gamja's own form — the line is written into the composer and the form submitted, exactly what Enter
-does — so no state is reached into.
-
-**Buffer search (⌘F / Ctrl+F)** — gamja has none. A dialog that filters the lines already rendered
-in the active buffer: several words match in any order, case-insensitive, the matched term is
-highlighted, `↑↓` moves through the results and Enter jumps to the line in the buffer, which flashes
-an outline. It replaces the browser's own find while gamja has focus.
-
-**Command history ↑/↓** in the composer, shell style (deduplicated, capped at 200 entries).
-
-**Readable `/help`** — gamja renders the help dialog as `<dt>`/`<dd>` pairs but never styles them,
-so every command comes out looking exactly like its own description. Commands now sit on a chip and
-descriptions are dimmed. It also fixes gamja's `<kbd>` chips, which are unreadable here (see below).
-
-**Working shortcuts on macOS** — gamja binds its shortcuts to `event.key`, but Option+letter on
-macOS produces a composed character (`Option+h` is `˙`), so Alt+h and Alt+a simply do nothing there.
-The physical key is read from `event.code` and the event is re-emitted with the right letter, so
-gamja's own handler still does the work. `Option+k` is accepted as well for the buffer switcher,
-which gamja binds to Ctrl — handy because macOS already claims Ctrl+K inside a text field. The
-`/help` dialog shows the Mac symbols (`⌥`, `⌃`) next to the Windows names.
-
-**Alt+↑/↓ follows the order you see** — with channels pinned, gamja's own navigation skips them as a
-block, because it walks the internal buffer Map while pinning only reorders the view. Navigation is
-redone on the visible order.
-
-**Private messages in their own block** — user buffers are always gathered right under the pinned
-channels and above the shared names, sorted by nick, under a *private messages* caption (`--pm-icon`).
-Scattered across their networks they were easy to lose; grouped, an incoming query is always in the
-same place.
-
-**Grouping of shared channel names** (*Extra* panel, off by default) — `#linux` on two networks used
-to sit far apart in the list, indistinguishable. Switched on, every name present on more than one
-network is lifted out of its network and gathered right below the pinned block under a *shared names*
-caption, each row labelled `@network`. **The pin wins**: a pinned channel stays in the pinned block
-even when its name is shared, it only gains the `@network` label so it cannot be confused with its
-twin, which stays down in the group.
-
-The network is not written anywhere on the `<li>`: it is derived from DOM order, by walking up to the
-network row that precedes the channel. Ordering reuses the pinning mechanism (`style.order` plus
-attributes preact does not manage), and the caption and the `@network` label are generated content,
-so **no node is inserted** into the list.
-
-**Row marks in the channel list** — networks get a `⚯` in front of the name and the bouncer row at
-the top gets a 🐇, so servers read as a different kind of row than channels at a glance. Both are
-swappable through the `--srv-icon` and `--bnc-icon` CSS variables. The network mark is a plain glyph
-on purpose, so it takes `color` and follows the theme; the rabbit is an emoji and therefore ignores
-it, like the 📌.
+**Command history ↑/↓** in the composer, shell style. **Readable `/help`**, whose `<dt>`/`<dd>` pairs
+gamja never styles. **Working shortcuts on macOS**, where Option+letter yields a composed character
+(`Option+h` is `˙`) and gamja's `event.key` bindings never fire. **Alt+↑/↓ follows the visible order**
+instead of gamja's internal one, which skips pinned channels as a block.
 
 **Forced dark theme** with self-hosted JetBrains Mono.
 
 ## Install
 
-1. Copy `custom.css`, `custom.js` and the `fonts/` directory into your gamja directory.
-2. In `index.html`, **after** the bundle tags, add:
+1. Copy `custom.css`, `custom.js` and `fonts/` into your gamja directory.
+2. In `index.html`, **after** the bundle tags:
 
    ```html
    <link rel=stylesheet href="custom.css?v=1">
    <script src="custom.js?v=1"></script>
    ```
 
-   The `?v=N` is cache busting: **bump it on every change**, otherwise browsers keep serving the old
-   file. It also helps to serve `index.html`, `config.json`, `custom.css` and `custom.js` with
-   `Cache-Control: no-store`.
+   Bump `?v=N` on every change, or browsers keep serving the old file. Serve `index.html`,
+   `config.json`, `custom.css` and `custom.js` as `Cache-Control: no-store`; the bundle and the fonts
+   carry a content hash in their name and can be cached forever.
 
-3. Copy `config.json.example` to `config.json` and **replace the URL with your own bouncer's
-   WebSocket endpoint** — the example value is a placeholder and connects to nothing:
-
-   ```json
-   {
-     "server": {
-       "url": "wss://YOUR-BOUNCER.example/socket",
-       "auth": "mandatory"
-     }
-   }
-   ```
-
-   `auth` can be `mandatory` (always ask for credentials), `optional`, or `external` (client
-   certificate). Nickname, autojoin channels and networks are configured in soju, not here.
-
-   ⚠️ The WebSocket **must live on the same origin** as the gamja page. If the page's Origin does not
-   match the WebSocket's Host, soju refuses the connection with
-   *"request Origin ... is not authorized for Host ..."*.
-
+3. Copy `config.json.example` to `config.json` and point it at your own bouncer's WebSocket endpoint.
+   ⚠️ It **must be on the same origin** as the page, or soju refuses the connection (*"request Origin
+   … is not authorized for Host …"*). Nick, autojoin and networks are configured in soju, not here.
 4. For the `/list` dialog, apply the bundle hook below.
 
 ## Bundle hook for `/list`
 
-gamja does not surface `LIST` numerics, so the dialog has to be fed by an event. In `build.*.js`,
-inside `handleMessage`, right **after** the message is parsed (where the parsed-message variable
-already exists — `s` in this build), insert:
+gamja does not surface `LIST` numerics, so the dialog is fed by an event. In `build.*.js`, inside
+`handleMessage`, right after the message is parsed (that variable is `s` in this build):
 
 ```js
 if ("322" === s.command) {
@@ -201,33 +105,22 @@ if ("322" === s.command) {
 }
 ```
 
-`321` starts the list, `322` is one row, `323` ends it. Returning early keeps those numerics out of
-the message buffer. Cost: one string comparison per received message.
+`321` opens the list, `322` is one row, `323` ends it; returning early keeps them out of the buffer.
 
-⚠️ Variable names are **minified and change on every build**: read them off your own bundle instead
-of copying blindly. And rebuilding gamja **overwrites everything**, this hook included.
+⚠️ Names are **minified and change on every build** — read them off your own bundle. Rebuilding gamja
+**overwrites the hook**. And if the bundle is served with a long `max-age`, a patched file needs a
+**new name** with `index.html` pointed at it, or the patch stays invisible.
 
-⚠️ If the bundle is served with a long `Cache-Control` (its name carries a content hash, so that is
-the sane way to serve it), patching the file **in place is not enough** — browsers keep the cached
-copy. Give the patched file a new name and point `index.html` at it; `index.html` itself must stay
-`no-store`.
-
-⚠️ **Do not wrap `window.WebSocket`** to intercept `/list`. The first iteration of this work did
-exactly that, together with a document-wide observer, and the result was a sluggish gamja with
-messages disappearing and reappearing.
+⚠️ Do **not** wrap `window.WebSocket` to intercept `/list`. That was the first attempt, together with a
+document-wide observer, and it left gamja sluggish with messages flickering in and out.
 
 ## More
 
-- [**Optional bundle fixes**](bundle-fixes.md) — three gamja defects worth patching in `build.*.js`:
-  the undismissable *Open buffer* dialog, a slow `/join` yanking you out of the buffer you moved to,
-  and history never loading on an empty buffer.
-- [**Notes**](notes.md) — how the pieces hold together and the traps behind them: why nodes are
-  re-injected on an interval instead of with a `MutationObserver`, the gamja rules declared only
-  inside `@media (prefers-color-scheme: dark)`, why mobile was abandoned, what the unread dot can and
-  cannot say.
+- [**Optional bundle fixes**](bundle-fixes.md) — three gamja defects worth patching.
+- [**Notes**](notes.md) — how the pieces hold together, and the traps behind them.
 
 ## Licenses
 
-`custom.css` and `custom.js` are original work. gamja itself is **AGPL-3.0** and is not included
-here. **JetBrains Mono** is licensed under the **SIL Open Font License 1.1**; its license text ships
-with the fonts in [`fonts/OFL.txt`](fonts/OFL.txt).
+`custom.css` and `custom.js` are original work. gamja itself is **AGPL-3.0** and is not included here.
+**JetBrains Mono** is under the **SIL Open Font License 1.1**, shipped with the fonts in
+[`fonts/OFL.txt`](fonts/OFL.txt).
