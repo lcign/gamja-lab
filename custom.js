@@ -32,7 +32,8 @@
 			'hue-rotate(' + dh + 'deg) saturate(' + sat + ') brightness(' + (0.7 + cur.l * 0.6).toFixed(2) + ')');
 	}
 
-	var GL = 'Channel list (left)', GR = 'Member list (right)', GM = 'Messages', GO = 'Other';
+	var GL = 'Channel list (left)', GR = 'Member list (right)', GM = 'Messages',
+		GB = 'Buttons and controls', GO = 'Other';
 	/* Fourth field = group, rendered as a heading in the panel. Order matters, and the groups follow
 	   WHERE the color shows up rather than what the variable is called: that was the flaw of the
 	   flat list, where "Side panels" and "Channel list background" looked like the same thing.
@@ -55,9 +56,22 @@
 		['Links',                   '--link-color',         '#53b266',   GM],
 		['Timestamp',               '--timestamp-color',    '#979797',   GM],
 
-		['Buttons',                 '--button-background',  '#282879',   GO],
-		['Buttons hover',           '--button-background-hover', '#00007c', GO],
-		['Alert (errors, offline)', '--red',                '#fb615b',   GO]
+		['Buttons',                 '--button-background',  '#282879',   GB],
+		['Buttons hover',           '--button-background-hover', '#00007c', GB],
+		['Button text',             '--button-color',       '#eff7ef',   GB],
+		['Button border',           '--button-border',      '#131618',   GB],
+		['Danger button',           '--danger-button-background', '#b20000', GB],
+		['Danger hover',            '--danger-button-background-hover', '#ff0000', GB],
+		['Danger text',             '--danger-button-color', '#eff7ef',  GB],
+		['Danger border',           '--danger-button-border', '#131618', GB],
+		['Expander',                '--expander-background', '#424446', GB],
+		['Expander hover',          '--expander-background-hover', '#2a2d2f', GB],
+		['Expander border',         '--expander-border',    '#6c6c6c',   GB],
+		['Focus ring',              '--outline-color',      '#6e7681',   GB],
+
+		['Alert (errors, offline)', '--red',                '#fb615b',   GO],
+		['Muted text',              '--gray',               '#979797',   GO],
+		['Buffer row hover',        '--buffer-button-background-hover', '#131618', GO]
 	];
 	var KEY = 'gamja_theme';
 	var root = document.documentElement;
