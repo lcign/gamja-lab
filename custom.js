@@ -1419,13 +1419,18 @@
    ⚠️ Anything that is not a message (join, part, quit, mode…) breaks the run: after one of those the
    nick is shown again, otherwise it is unclear who is talking. */
 (function () {
-	var KEY = 'gamja_hide_repeat';
+	var KEY = 'gamja_hide_repeat', WKEY = 'gamja_wrap_align';
 	function on() { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
+	function wrapOn() { try { return localStorage.getItem(WKEY) !== '0'; } catch (e) { return true; } }
 
+	/* A wrapped message used to continue under the timestamp. It is now given a hanging indent so the
+	   continuation sits in the text column — and since the font is monospaced the indent is COUNTED,
+	   not measured: timestamp + two carets + nick + two spaces, expressed in `ch`. No layout is read,
+	   and the result survives a change of text size or window width on its own. */
 	function pass() {
 		var host = document.getElementById('buffer');
 		if (!host) return;
-		var lines = host.querySelectorAll('.logline'), prev = null, live = on();
+		var lines = host.querySelectorAll('.logline'), prev = null, live = on(), wrap = wrapOn();
 		for (var i = 0; i < lines.length; i++) {
 			var el = lines[i];
 			var isMsg = !!el.querySelector('.nick-caret');
@@ -1434,9 +1439,22 @@
 			if (live && nick && nick === prev) el.setAttribute('data-samenick', '');
 			else el.removeAttribute('data-samenick');
 			prev = isMsg ? nick : null;
+
+			if (wrap && isMsg && nick) {
+				var ts = el.querySelector('a.timestamp');
+				var n = (ts ? ts.textContent.trim().length : 0) + nick.length + 4;
+				var want = n + 'ch';
+				if (el.style.paddingLeft !== want) {
+					el.style.paddingLeft = want;
+					el.style.textIndent = '-' + want;
+				}
+			} else if (el.style.paddingLeft) {
+				el.style.paddingLeft = '';
+				el.style.textIndent = '';
+			}
 		}
 	}
-	setInterval(function () { if (on()) pass(); }, 700);
+	setInterval(function () { if (on() || wrapOn()) pass(); }, 700);
 	pass();
 
 	document.addEventListener('gamja-extra-panel', function (ev) {
@@ -1455,13 +1473,29 @@
 		});
 		row.appendChild(lab); row.appendChild(chk);
 		panel.appendChild(row);
+
+		var wrow = document.createElement('div');
+		wrow.className = 'tp-zoom wa-row';
+		var wlab = document.createElement('span');
+		wlab.textContent = 'Align wrapped messages';
+		var wchk = document.createElement('input');
+		wchk.type = 'checkbox'; wchk.checked = wrapOn(); wchk.style.flex = 'none';
+		wchk.title = 'A message too long for one line continues in the text column instead of under the timestamp.';
+		wchk.addEventListener('change', function () {
+			try { localStorage.setItem(WKEY, wchk.checked ? '1' : '0'); } catch (e) {}
+			pass();
+		});
+		wrow.appendChild(wlab); wrow.appendChild(wchk);
+		panel.appendChild(wrow);
 	});
 
 	document.addEventListener('gamja-extra-reset', function () {
-		try { localStorage.removeItem(KEY); } catch (e) {}
+		try { localStorage.removeItem(KEY); localStorage.removeItem(WKEY); } catch (e) {}
 		pass();
 		var chk = document.querySelector('.hr-row input[type=checkbox]');
 		if (chk) chk.checked = false;
+		var wchk = document.querySelector('.wa-row input[type=checkbox]');
+		if (wchk) wchk.checked = true;
 	});
 })();
 
