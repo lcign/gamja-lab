@@ -167,14 +167,13 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".webp" i]::before{
 	content:var(--img-icon,"\25A3")}
 
-/* the timestamp is an <a> in gamja: it picked up the link underline on hover, and — the part that
-   actually got in the way — dragging across it started a LINK DRAG instead of selecting text, so a
-   selection had to be started somewhere else. `-webkit-user-drag:none` restores plain text selection;
-   the caret cursor matches. The link still works on a click. */
-#buffer a.timestamp,
-#buffer a.timestamp:hover,
-#buffer a.timestamp:active{text-decoration:none}
-#buffer a.timestamp{user-select:text;cursor:text}
+/* the timestamp is an <a> in gamja, and a link cannot be the start of a selection: the gesture becomes
+   a link drag. custom.js therefore removes its `href` unless the permalink option is on, and these two
+   rules make it look like what it now is. With the option on, gamja's own link styling comes back. */
+:root:not([data-permalink]) #buffer a.timestamp,
+:root:not([data-permalink]) #buffer a.timestamp:hover,
+:root:not([data-permalink]) #buffer a.timestamp:active{text-decoration:none}
+:root:not([data-permalink]) #buffer a.timestamp{cursor:text}
 
 /* repeated nick hidden: the two carets and the nick itself.
    ⚠️ `visibility:hidden`, not `display:none`: the space stays, so the text of a run keeps starting at

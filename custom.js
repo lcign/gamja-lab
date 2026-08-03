@@ -1412,21 +1412,62 @@
 	}, true);
 })();
 
-/* ===================== the timestamp is text, not a link =====================
-   An <a> is draggable, so a selection could not be started on the timestamp: the gesture turned into a
-   link drag. Cancelling `dragstart` and `-webkit-user-drag` both failed to help, so the anchor itself
-   is de-linked — the `href` is REMOVED, which is what actually makes it behave as text.
-   ⚠️ The element is left alone otherwise: replacing the <a> with a <span> would change the tag preact
-   expects at that position and upset its diff. `href` is a prop preact owns, so it comes back when the
-   line is re-rendered; the selector below only matches the ones that still have it, which keeps this
-   to almost nothing at rest. */
+/* ===================== timestamp: text or permalink =====================
+   An <a> is draggable, so a selection cannot be started on the timestamp — the gesture turns into a
+   link drag, and neither `dragstart` nor `-webkit-user-drag` prevented it. The `href` is therefore
+   removed, which is what actually makes it behave as text. The original is kept in `data-href`, so the
+   *Timestamp permalink* option can put it back.
+   What that link is: `irc://…/#channel?msgid=…`, a reference to that one message — useful for a
+   right-click "copy link address" if anyone you talk to has an irc: handler and the same bouncer.
+   ⚠️ The element is not replaced: a <span> in place of the <a> would change the tag preact expects
+   there. `href` is a prop preact owns, so it reappears on a re-render; the selectors below match only
+   the elements that need work, which keeps this near-free at rest. */
 (function () {
-	function strip() {
-		var as = document.querySelectorAll('#buffer a.timestamp[href]');
-		for (var i = 0; i < as.length; i++) as[i].removeAttribute('href');
+	var KEY = 'gamja_permalink';
+	function on() { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
+
+	function pass() {
+		var i, as;
+		if (on()) {
+			document.documentElement.setAttribute('data-permalink', '');
+			as = document.querySelectorAll('#buffer a.timestamp[data-href]:not([href])');
+			for (i = 0; i < as.length; i++) as[i].setAttribute('href', as[i].getAttribute('data-href'));
+		} else {
+			document.documentElement.removeAttribute('data-permalink');
+			as = document.querySelectorAll('#buffer a.timestamp[href]');
+			for (i = 0; i < as.length; i++) {
+				as[i].setAttribute('data-href', as[i].getAttribute('href'));
+				as[i].removeAttribute('href');
+			}
+		}
 	}
-	setInterval(strip, 500);
-	strip();
+	setInterval(pass, 500);
+	pass();
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.pl-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom pl-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Timestamp permalink';
+		var chk = document.createElement('input');
+		chk.type = 'checkbox'; chk.checked = on(); chk.style.flex = 'none';
+		chk.title = 'Off: the timestamp is plain text, so a selection can start there. On: it is a link to that message, and dragging from it drags the link.';
+		chk.addEventListener('change', function () {
+			try { localStorage.setItem(KEY, chk.checked ? '1' : '0'); } catch (e) {}
+			pass();
+		});
+		row.appendChild(lab); row.appendChild(chk);
+		panel.appendChild(row);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(KEY); } catch (e) {}
+		pass();
+		var chk = document.querySelector('.pl-row input[type=checkbox]');
+		if (chk) chk.checked = false;
+	});
 })();
 
 /* ===================== text shortcuts (:shrug) =====================
