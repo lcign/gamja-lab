@@ -152,7 +152,7 @@ html{font-size:calc(16px * var(--fs,1))}
    theme — `↗` carries U+FE0E (the text variation selector) to stop macOS rendering it as a coloured
    emoji. Swap them through --link-icon and --img-icon (⚓ and 🖼 work too, they just ignore colour). */
 #buffer a[href^="http"]:not(.nick):not(.timestamp)::before{content:var(--link-icon,"\2197\FE0E");
-	margin-right:.3em;font-size:.85em;opacity:.75;display:inline-block}
+	margin-right:.3em;font-size:.85em;opacity:.75}
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".png" i]::before,
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".jpg" i]::before,
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".jpeg" i]::before,
