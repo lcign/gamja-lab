@@ -117,8 +117,8 @@
 		   layout; which tab was last open is remembered. */
 		var TKEY = 'gamja_extra_tab';
 		var tabs = document.createElement('div'); tabs.className = 'tp-tabs';
-		var paneOpt = document.createElement('div'); paneOpt.className = 'tp-pane';
-		var paneCol = document.createElement('div'); paneCol.className = 'tp-pane';
+		var paneOpt = document.createElement('div'); paneOpt.className = 'tp-pane tp-options';
+		var paneCol = document.createElement('div'); paneCol.className = 'tp-pane tp-colors';
 		var tabOpt = document.createElement('button'); tabOpt.type = 'button'; tabOpt.textContent = 'Options';
 		var tabCol = document.createElement('button'); tabCol.type = 'button'; tabCol.textContent = 'Colors';
 		function showTab(which) {

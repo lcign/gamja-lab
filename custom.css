@@ -67,8 +67,15 @@ html{font-size:calc(16px * var(--fs,1))}
 	border-radius:10px;padding:12px;width:480px;max-width:92vw;box-sizing:border-box;
 	box-shadow:0 10px 40px rgba(0,0,0,.5);
 	display:flex;flex-direction:column}
-/* each tab's pane is the 2-column grid the colors need; the rest spans both columns */
+/* each tab's pane is a grid; the rest of the rows span every column. With twenty-nine colours two
+   columns were tall again, so on a wide window the panel widens to FOUR — the options pane keeps one
+   row per setting, since those rows are label + control and read better full width. */
 #themePanel .tp-pane{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
+@media(min-width:1100px){
+	#themePanel{width:900px}
+	#themePanel .tp-pane.tp-colors{grid-template-columns:repeat(4,1fr)}
+	#themePanel .tp-pane.tp-options{grid-template-columns:1fr}
+}
 #themePanel .tp-pane.hidden{display:none}
 #themePanel .tp-pane > .tp-zoom,
 #themePanel .tp-pane > .tp-warn,
