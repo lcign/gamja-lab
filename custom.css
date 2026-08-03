@@ -123,6 +123,28 @@ html{font-size:calc(16px * var(--fs,1))}
 #listPanel .lp-more{padding:0.7rem 1rem;color:var(--gray);font-size:0.92rem;text-align:center}
 
 
+/* a mark in front of links in messages: an anchor for a plain link, a picture for one that points at
+   an image. Pure CSS, so it costs nothing per message.
+   ⚠️ `a.nick` and `a.timestamp` must be excluded — in the buffer those are links too, the same trap
+   as the link colour. Only http(s) is marked, so gamja's internal `irc://` channel links stay clean.
+   Both are emoji, drawn by a colour font: they ignore `color`, like the 📌 and the 🐇. Swap them
+   through --link-icon and --img-icon. */
+#buffer a[href^="http"]:not(.nick):not(.timestamp)::before{content:var(--link-icon,"⚓");
+	margin-right:.3em;font-size:.85em;opacity:.75;display:inline-block}
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".png" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".jpg" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".jpeg" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".gif" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".webp" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".avif" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".svg" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".png?" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".jpg?" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".jpeg?" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".gif?" i]::before,
+#buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".webp" i]::before{
+	content:var(--img-icon,"🖼")}
+
 /* image preview modal: the picture is scaled to fit the window with room to spare (88% wide, 82%
    tall) and never enlarged past its own size */
 #imgBackdrop{position:fixed;inset:0;z-index:10051;background:rgba(0,0,0,.75);display:flex;
