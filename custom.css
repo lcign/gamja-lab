@@ -127,9 +127,10 @@ html{font-size:calc(16px * var(--fs,1))}
    an image. Pure CSS, so it costs nothing per message.
    ⚠️ `a.nick` and `a.timestamp` must be excluded — in the buffer those are links too, the same trap
    as the link colour. Only http(s) is marked, so gamja's internal `irc://` channel links stay clean.
-   Both are emoji, drawn by a colour font: they ignore `color`, like the 📌 and the 🐇. Swap them
-   through --link-icon and --img-icon. */
-#buffer a[href^="http"]:not(.nick):not(.timestamp)::before{content:var(--link-icon,"⚓");
+   Both glyphs are plain characters, not emoji, so they take `color` and follow the link colour of the
+   theme — `↗` carries U+FE0E (the text variation selector) to stop macOS rendering it as a coloured
+   emoji. Swap them through --link-icon and --img-icon (⚓ and 🖼 work too, they just ignore colour). */
+#buffer a[href^="http"]:not(.nick):not(.timestamp)::before{content:var(--link-icon,"\2197\FE0E");
 	margin-right:.3em;font-size:.85em;opacity:.75;display:inline-block}
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".png" i]::before,
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href$=".jpg" i]::before,
@@ -143,7 +144,7 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".jpeg?" i]::before,
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".gif?" i]::before,
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".webp" i]::before{
-	content:var(--img-icon,"🖼")}
+	content:var(--img-icon,"\25A3")}
 
 /* image preview modal: the picture is scaled to fit the window with room to spare (88% wide, 82%
    tall) and never enlarged past its own size */
