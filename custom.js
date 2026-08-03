@@ -549,6 +549,7 @@
 	}
 
 	function tick() { markPinned(); injectPinButton(); stampHeader(); shortenNicks(); }
+	document.addEventListener('gamja-refresh', tick);
 	setInterval(tick, 700);
 	tick();
 })();
@@ -1412,6 +1413,28 @@
 	}, true);
 })();
 
+/* ===================== refresh after a buffer switch =====================
+   Switching buffer makes gamja unmount and rebuild the message list, and everything this file adds
+   afterwards — hidden repeated nicks, the hanging indent, :shrug, the de-linked timestamp — would
+   otherwise land on the next tick, up to 700 ms later, and be briefly visible in its raw state. This
+   fires the passes that already exist right after the switch, so no new interval and no observer: the
+   same work, a few hundred milliseconds earlier, and only when the buffer actually changes. */
+(function () {
+	var TIMES = [0, 60, 200, 500];
+	function refresh() {
+		TIMES.forEach(function (ms) {
+			setTimeout(function () { document.dispatchEvent(new CustomEvent('gamja-refresh')); }, ms);
+		});
+	}
+	document.addEventListener('click', function (e) {
+		var t = e.target;
+		if (t && t.closest && (t.closest('#buffer-list a') || t.closest('.dialog'))) refresh();
+	}, true);
+	document.addEventListener('keydown', function (e) {
+		if (e.key === 'Enter' || ((e.altKey || e.ctrlKey || e.metaKey) && /^(ArrowUp|ArrowDown|k|K)$/.test(e.key))) refresh();
+	}, true);
+})();
+
 /* ===================== timestamp: text or permalink =====================
    An <a> is draggable, so a selection cannot be started on the timestamp — the gesture turns into a
    link drag, and neither `dragstart` nor `-webkit-user-drag` prevented it. The `href` is therefore
@@ -1442,6 +1465,7 @@
 		}
 	}
 	setInterval(pass, 500);
+	document.addEventListener('gamja-refresh', pass);
 	pass();
 
 	document.addEventListener('gamja-extra-panel', function (ev) {
@@ -1506,6 +1530,7 @@
 		}
 	}
 	setInterval(renderPass, 700);
+	document.addEventListener('gamja-refresh', renderPass);
 	renderPass();
 
 	document.addEventListener('keydown', function (e) {
@@ -1567,6 +1592,7 @@
 		}
 	}
 	setInterval(function () { if (on() || wrapOn()) pass(); }, 700);
+	document.addEventListener('gamja-refresh', pass);
 	pass();
 
 	document.addEventListener('gamja-extra-panel', function (ev) {
