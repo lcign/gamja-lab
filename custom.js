@@ -1412,6 +1412,59 @@
 	}, true);
 })();
 
+/* ===================== hide repeated nicks =====================
+   Consecutive messages from the same person keep only the first `<nick>`, which makes a back-and-forth
+   much easier to read. gamja renders a line as `<span.nick-caret>` `<a.nick>` `<span.nick-caret>` and
+   then the text, so all three have to go — hiding the nick alone would leave an empty `< >`.
+   ⚠️ Anything that is not a message (join, part, quit, mode…) breaks the run: after one of those the
+   nick is shown again, otherwise it is unclear who is talking. */
+(function () {
+	var KEY = 'gamja_hide_repeat';
+	function on() { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
+
+	function pass() {
+		var host = document.getElementById('buffer');
+		if (!host) return;
+		var lines = host.querySelectorAll('.logline'), prev = null, live = on();
+		for (var i = 0; i < lines.length; i++) {
+			var el = lines[i];
+			var isMsg = !!el.querySelector('.nick-caret');
+			var nickEl = isMsg ? el.querySelector('a.nick') : null;
+			var nick = nickEl ? nickEl.textContent : null;
+			if (live && nick && nick === prev) el.setAttribute('data-samenick', '');
+			else el.removeAttribute('data-samenick');
+			prev = isMsg ? nick : null;
+		}
+	}
+	setInterval(function () { if (on()) pass(); }, 700);
+	pass();
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.hr-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom hr-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Hide repeated nicks';
+		var chk = document.createElement('input');
+		chk.type = 'checkbox'; chk.checked = on(); chk.style.flex = 'none';
+		chk.title = 'Consecutive messages from the same person show the nick only once.';
+		chk.addEventListener('change', function () {
+			try { localStorage.setItem(KEY, chk.checked ? '1' : '0'); } catch (e) {}
+			pass();
+		});
+		row.appendChild(lab); row.appendChild(chk);
+		panel.appendChild(row);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(KEY); } catch (e) {}
+		pass();
+		var chk = document.querySelector('.hr-row input[type=checkbox]');
+		if (chk) chk.checked = false;
+	});
+})();
+
 /* ===================== row marks =====================
    The glyphs in front of rows and links, editable from the panel. Only the character is stored; the
    CSS variables it feeds already have these as their defaults, so an empty field means "back to the

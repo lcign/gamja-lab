@@ -167,6 +167,10 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer a[href^="http"]:not(.nick):not(.timestamp)[href*=".webp" i]::before{
 	content:var(--img-icon,"\25A3")}
 
+/* repeated nick hidden: the two carets and the nick itself */
+#buffer .logline[data-samenick] .nick-caret,
+#buffer .logline[data-samenick] a.nick{display:none}
+
 /* image preview modal: the picture is scaled to fit the window with room to spare (88% wide, 82%
    tall) and never enlarged past its own size */
 #imgBackdrop{position:fixed;inset:0;z-index:10051;background:rgba(0,0,0,.75);display:flex;
