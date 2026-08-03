@@ -59,20 +59,28 @@ html{font-size:calc(16px * var(--fs,1))}
 .colors-btn{margin-left:0}
 #themeBackdrop{position:fixed;inset:0;z-index:10021;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
 #themeBackdrop.hidden{display:none}
-/* TWO-COLUMN panel: there are fourteen colors, and in a single column the panel turned into a
-   very tall strip. The grid lives on the panel itself, so no extra container is needed in the JS:
-   the color rows (`.tp-row`) flow into two columns and everything else spans the full width.
-   Below 560px (phones) it goes back to a single column. */
+/* The panel is split into two tabs, Options and Colors: seven settings plus fourteen colors made it
+   taller than most windows. The panel itself is a flex column (head, tabs, panes, Reset) and each
+   PANE is the two-column grid — the color rows flow into two columns, everything else spans both.
+   Below 560px (phones) the panes go back to a single column. */
 #themePanel{background:var(--sidebar-background);color:var(--main-color);border:1px solid var(--expander-border);
 	border-radius:10px;padding:12px;width:480px;max-width:92vw;box-sizing:border-box;
 	box-shadow:0 10px 40px rgba(0,0,0,.5);
-	display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
-#themePanel > .tp-head,
-#themePanel > .tp-zoom,
-#themePanel > .tp-warn,
-#themePanel > .tp-sec,
-#themePanel > .tp-reset{grid-column:1 / -1}
-@media(max-width:560px){#themePanel{width:265px;grid-template-columns:1fr}}
+	display:flex;flex-direction:column}
+/* each tab's pane is the 2-column grid the colors need; the rest spans both columns */
+#themePanel .tp-pane{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
+#themePanel .tp-pane.hidden{display:none}
+#themePanel .tp-pane > .tp-zoom,
+#themePanel .tp-pane > .tp-warn,
+#themePanel .tp-pane > .tp-sec{grid-column:1 / -1}
+/* tab bar */
+#themePanel .tp-tabs{display:flex;gap:6px;margin:2px 0 10px}
+#themePanel .tp-tabs button{flex:1;background:none;color:var(--main-color);cursor:pointer;font-size:12px;
+	padding:5px 8px;border:1px solid var(--expander-border,#6c6c6c);border-radius:6px;opacity:.6}
+#themePanel .tp-tabs button:hover{opacity:.85}
+#themePanel .tp-tabs button.active{opacity:1;background:var(--button-background);color:var(--button-color);
+	border-color:var(--button-border,#131618)}
+@media(max-width:560px){#themePanel{width:265px}#themePanel .tp-pane{grid-template-columns:1fr}}
 #themePanel .tp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 #themePanel .tp-close{background:none;border:none;color:var(--main-color);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px}
 #themePanel .tp-h{font-weight:700;font-size:13px}

@@ -96,6 +96,28 @@
 		var close = document.createElement('button'); close.type = 'button'; close.className = 'tp-close'; close.textContent = '✕'; close.title = 'Close';
 		head.appendChild(h); head.appendChild(close); panel.appendChild(head);
 		close.addEventListener('click', hide);
+
+		/* Two tabs, Options and Colors: with seven settings plus fourteen colors the panel had grown
+		   taller than most windows. Each pane is its own 2-column grid, so the colors keep their
+		   layout; which tab was last open is remembered. */
+		var TKEY = 'gamja_extra_tab';
+		var tabs = document.createElement('div'); tabs.className = 'tp-tabs';
+		var paneOpt = document.createElement('div'); paneOpt.className = 'tp-pane';
+		var paneCol = document.createElement('div'); paneCol.className = 'tp-pane';
+		var tabOpt = document.createElement('button'); tabOpt.type = 'button'; tabOpt.textContent = 'Options';
+		var tabCol = document.createElement('button'); tabCol.type = 'button'; tabCol.textContent = 'Colors';
+		function showTab(which) {
+			var col = which === 'col';
+			paneOpt.classList.toggle('hidden', col);
+			paneCol.classList.toggle('hidden', !col);
+			tabOpt.classList.toggle('active', !col);
+			tabCol.classList.toggle('active', col);
+			try { localStorage.setItem(TKEY, col ? 'col' : 'opt'); } catch (e) {}
+		}
+		tabOpt.addEventListener('click', function () { showTab('opt'); });
+		tabCol.addEventListener('click', function () { showTab('col'); });
+		tabs.appendChild(tabOpt); tabs.appendChild(tabCol);
+		panel.appendChild(tabs); panel.appendChild(paneOpt); panel.appendChild(paneCol);
 		var zrow = document.createElement('div'); zrow.className = 'tp-zoom';
 		var zlab = document.createElement('span'); zlab.textContent = 'Text size';
 		var zminus = document.createElement('button'); zminus.type = 'button'; zminus.className = 'tp-zbtn'; zminus.textContent = 'A−'; zminus.title = 'Smaller text';
@@ -107,7 +129,7 @@
 		zplus.addEventListener('click', function () { zset(fs + 0.05); });
 		zshow();
 		zrow.appendChild(zlab); zrow.appendChild(zminus); zrow.appendChild(znum); zrow.appendChild(zplus);
-		panel.appendChild(zrow);
+		paneOpt.appendChild(zrow);
 
 		// row cap for the /list dialog: read there on every render (localStorage gamja_list_rows)
 		var lrow = document.createElement('div'); lrow.className = 'tp-zoom';
@@ -121,11 +143,11 @@
 		linp.addEventListener('input', lshow);
 		lshow();
 		lrow.appendChild(llab); lrow.appendChild(linp);
-		panel.appendChild(lrow); panel.appendChild(lwarn);
+		paneOpt.appendChild(lrow); paneOpt.appendChild(lwarn);
 
 		// Hook for blocks living outside this closure: they append their own rows here, right
 		// before the colors. If nobody listens, nothing happens.
-		document.dispatchEvent(new CustomEvent('gamja-extra-panel', { detail: { panel: panel } }));
+		document.dispatchEvent(new CustomEvent('gamja-extra-panel', { detail: { panel: paneOpt } }));
 
 		var lastGroup = null;
 		VARS.forEach(function (v) {
@@ -133,7 +155,7 @@
 				lastGroup = v[3];
 				var sec = document.createElement('div');
 				sec.className = 'tp-sec'; sec.textContent = v[3];
-				panel.appendChild(sec);
+				paneCol.appendChild(sec);
 			}
 			var row = document.createElement('label'); row.className = 'tp-row';
 			var span = document.createElement('span'); span.textContent = v[0];
@@ -143,7 +165,7 @@
 				var o = load(); o[v[1]] = inp.value; save(o);
 				if (v[1] === '--pin-color') updatePin();
 			});
-			row.appendChild(span); row.appendChild(inp); panel.appendChild(row);
+			row.appendChild(span); row.appendChild(inp); paneCol.appendChild(row);
 		});
 		var reset = document.createElement('button');
 		reset.type = 'button'; reset.className = 'tp-reset'; reset.textContent = 'Reset';
@@ -158,6 +180,7 @@
 			document.dispatchEvent(new CustomEvent('gamja-extra-reset'));
 		});
 		panel.appendChild(reset);
+		showTab((function () { try { return localStorage.getItem(TKEY) || 'opt'; } catch (e) { return 'opt'; } })());
 		backdrop.appendChild(panel);
 		document.body.appendChild(backdrop);
 		backdrop.addEventListener('click', function (e) { if (e.target === backdrop) hide(); });
