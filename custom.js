@@ -1037,15 +1037,72 @@
 		imgEl.removeAttribute('src');            // stops a download still in flight
 	}
 
-	// one delegated listener, nothing per message and no observer
+	/* ===== ask before following a plain link (Options → "Ask before opening links") =====
+	   The point is not that gamja hides the address — it shows it as the message text — but that a
+	   long or lookalike host is easy to skim past. The dialog stops the click and puts the host on
+	   its own line, with the whole URL underneath. */
+	var ASKKEY = 'gamja_link_confirm';
+	function askOn() { try { return localStorage.getItem(ASKKEY) === '1'; } catch (e) { return false; } }
+	var askWrap = null, askHost = null, askUrl = null, askGo = null;
+
+	function buildAsk() {
+		if (askWrap) return;
+		askWrap = document.createElement('div');
+		askWrap.id = 'askBackdrop'; askWrap.className = 'hidden';
+		var panel = document.createElement('div'); panel.id = 'askPanel';
+		var head = document.createElement('div'); head.className = 'lp-head';
+		var h = document.createElement('div'); h.className = 'lp-h'; h.textContent = 'Open this link?';
+		var close = document.createElement('button');
+		close.type = 'button'; close.className = 'lp-close'; close.textContent = '✕'; close.title = 'Close';
+		head.appendChild(h); head.appendChild(close);
+		askHost = document.createElement('div'); askHost.className = 'ak-host';
+		askUrl = document.createElement('div'); askUrl.className = 'ak-url';
+		var warn = document.createElement('div'); warn.className = 'ak-warn';
+		warn.textContent = '⚠ Check the host above: a link can read like one site and lead to another. ' +
+			'Opening it tells that server your IP address.';
+		var bar = document.createElement('div'); bar.className = 'ak-bar';
+		var cancel = document.createElement('button');
+		cancel.type = 'button'; cancel.className = 'lp-sort'; cancel.textContent = 'Cancel';
+		askGo = document.createElement('button');
+		askGo.type = 'button'; askGo.className = 'lp-sort active'; askGo.textContent = 'Open';
+		bar.appendChild(cancel); bar.appendChild(askGo);
+		panel.appendChild(head); panel.appendChild(askHost); panel.appendChild(askUrl);
+		panel.appendChild(warn); panel.appendChild(bar);
+		askWrap.appendChild(panel);
+		document.body.appendChild(askWrap);
+
+		close.addEventListener('click', hideAsk);
+		cancel.addEventListener('click', hideAsk);
+		askWrap.addEventListener('click', function (e) { if (e.target === askWrap) hideAsk(); });
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && askWrap && !askWrap.classList.contains('hidden')) hideAsk();
+		});
+	}
+	function hideAsk() { if (askWrap) askWrap.classList.add('hidden'); }
+	function ask(url) {
+		buildAsk();
+		var host = url;
+		try { host = new URL(url).host; } catch (e) {}
+		askHost.textContent = host;
+		askUrl.textContent = url;
+		askGo.onclick = function () {
+			hideAsk();
+			// still inside a click gesture, so this is not treated as a popup
+			window.open(url, '_blank', 'noopener,noreferrer');
+		};
+		askWrap.classList.remove('hidden');
+		askGo.focus();
+	}
+
+	// one delegated listener for both, nothing per message and no observer
 	document.addEventListener('click', function (e) {
-		if (!on() || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+		if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 		var a = e.target && e.target.closest ? e.target.closest('#buffer a') : null;
 		if (!a) return;
 		var href = a.href || '';
-		if (href.indexOf('https://') !== 0 || !IMG_RE.test(href)) return;
-		e.preventDefault();
-		show(href);
+		if (href.indexOf('http') !== 0) return;
+		if (on() && href.indexOf('https://') === 0 && IMG_RE.test(href)) { e.preventDefault(); show(href); return; }
+		if (askOn()) { e.preventDefault(); ask(href); }
 	});
 
 	document.addEventListener('gamja-extra-panel', function (ev) {
@@ -1063,12 +1120,27 @@
 		});
 		row.appendChild(lab); row.appendChild(chk);
 		panel.appendChild(row);
+
+		var arow = document.createElement('div');
+		arow.className = 'tp-zoom ak-row';
+		var alab = document.createElement('span');
+		alab.textContent = 'Ask before opening links';
+		var achk = document.createElement('input');
+		achk.type = 'checkbox'; achk.checked = askOn(); achk.style.flex = 'none';
+		achk.title = 'Shows the host and the full address, and waits for a confirmation, before a link is opened.';
+		achk.addEventListener('change', function () {
+			try { localStorage.setItem(ASKKEY, achk.checked ? '1' : '0'); } catch (e) {}
+		});
+		arow.appendChild(alab); arow.appendChild(achk);
+		panel.appendChild(arow);
 	});
 
 	document.addEventListener('gamja-extra-reset', function () {
-		try { localStorage.removeItem(KEY); } catch (e) {}
+		try { localStorage.removeItem(KEY); localStorage.removeItem(ASKKEY); } catch (e) {}
 		var chk = document.querySelector('.im-row input[type=checkbox]');
 		if (chk) chk.checked = false;
+		var achk = document.querySelector('.ak-row input[type=checkbox]');
+		if (achk) achk.checked = false;
 	});
 })();
 
