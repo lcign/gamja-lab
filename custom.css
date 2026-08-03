@@ -179,10 +179,13 @@ html{font-size:calc(16px * var(--fs,1))}
    ⚠️ `visibility:hidden`, not `display:none`: the space stays, so the text of a run keeps starting at
    exactly the same column as the first line — and since it is the same nick every time, the width
    matches by construction, with no measuring. Hidden text is not rendered, so it stays out of
-   selections and out of the copy handler, which reads innerText. */
+   selections and out of the copy handler, which reads innerText.
+   ⚠️ `user-select:none` as well: a hidden element still occupies space and is still SELECTABLE, so a
+   selection dragged over one of these rows painted an empty highlighted block where the timestamp and
+   the nick sit. */
 #buffer .logline[data-samenick] .nick-caret,
 #buffer .logline[data-samenick] a.nick,
-#buffer .logline[data-samenick] a.timestamp{visibility:hidden}
+#buffer .logline[data-samenick] a.timestamp{visibility:hidden;user-select:none}
 
 /* image preview modal: the picture is scaled to fit the window with room to spare (88% wide, 82%
    tall) and never enlarged past its own size */
