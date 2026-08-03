@@ -1088,6 +1088,22 @@
 		if (inp) inp.value = String(MDEF);
 	});
 
+	// Tab-completion for `/paste`: gamja completes from its own command list, which cannot know about
+	// this one. Handled from three characters on (`/pas`) — no gamja command starts with that, so its
+	// own completion (`/part`, `/ping`, …) is never intercepted.
+	document.addEventListener('keydown', function (e) {
+		if (e.key !== 'Tab' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+		var input = composer();
+		if (!input || e.target !== input) return;
+		var v = input.value;
+		if (!/^\/[a-z]*$/i.test(v)) return;                 // still typing a single command token
+		var tok = v.slice(1).toLowerCase();
+		if (tok.length < 3 || 'paste'.indexOf(tok) !== 0) return;
+		e.preventDefault(); e.stopPropagation();
+		input.value = '/paste';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}, true);
+
 	// pasting several lines into the composer: offer the dialog rather than let them be flattened
 	document.addEventListener('paste', function (e) {
 		var input = composer();
