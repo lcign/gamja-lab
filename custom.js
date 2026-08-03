@@ -1377,6 +1377,66 @@
 	}, true);
 })();
 
+/* ===================== row marks =====================
+   The glyphs in front of rows and links, editable from the panel. Only the character is stored; the
+   CSS variables it feeds already have these as their defaults, so an empty field means "back to the
+   default" and is written by REMOVING the property rather than setting it.
+   ⚠️ `content` wants a quoted string, hence the quotes added around the value here. */
+(function () {
+	var KEY = 'gamja_icons';
+	var ICONS = [
+		['Bouncer row',      '--bnc-icon',    '🐇'],
+		['Network row',      '--srv-icon',    '⚯'],
+		['Shared names',     '--shared-icon', '⧉'],
+		['Private messages', '--pm-icon',     '✉'],
+		['Link',             '--link-icon',   '↗\uFE0E'],
+		['Image link',       '--img-icon',    '▣']
+	];
+	function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+	function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+	function apply() {
+		var o = load(), r = document.documentElement;
+		ICONS.forEach(function (it) {
+			if (o[it[1]]) r.style.setProperty(it[1], '"' + o[it[1]] + '"');
+			else r.style.removeProperty(it[1]);
+		});
+	}
+	apply();
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.ic-row')) return;
+		var sec = document.createElement('div');
+		sec.className = 'tp-sec'; sec.textContent = 'Row marks';
+		panel.appendChild(sec);
+		var o = load();
+		ICONS.forEach(function (it) {
+			var row = document.createElement('div');
+			row.className = 'tp-zoom ic-row';
+			var lab = document.createElement('span'); lab.textContent = it[0];
+			var inp = document.createElement('input');
+			inp.type = 'text'; inp.className = 'tp-icon'; inp.maxLength = 4;
+			inp.value = o[it[1]] || '';
+			inp.placeholder = it[2];
+			inp.title = 'One glyph. Empty puts the default back. Plain characters follow the theme colours; emoji do not.';
+			inp.addEventListener('change', function () {
+				var cur = load(), v = inp.value.trim();
+				if (v) cur[it[1]] = v; else delete cur[it[1]];
+				save(cur); apply();
+			});
+			row.appendChild(lab); row.appendChild(inp);
+			panel.appendChild(row);
+		});
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(KEY); } catch (e) {}
+		apply();
+		var ins = document.querySelectorAll('.ic-row input');
+		for (var i = 0; i < ins.length; i++) ins[i].value = '';
+	});
+})();
+
 /* ===================== nick length cap =====================
    How many characters of a nick the member list shows before the ellipsis. Only a number is kept
    here; the cut itself is done in CSS through the --nick-max variable. */

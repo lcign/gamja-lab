@@ -25,6 +25,8 @@ than a setting.
   timestamps, channel activity, the button/danger/expander sets, the focus ring
 - text zoom, `/list` row cap, `/paste` line cap, nick length in the member list
 - toggles: group shared channel names, unread dot and its side, image preview, link confirmation
+- the **row marks** themselves — bouncer, network, shared names, private messages, link, image link —
+  one glyph each, empty for the default
 
 **Channel list** — 📌 in the member list header pins the open channel to the top; networks are marked
 `⚯`, the bouncer row 🐇. **Private messages** get their own block under the pinned channels, sorted by

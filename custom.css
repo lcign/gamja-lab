@@ -104,6 +104,9 @@ html{font-size:calc(16px * var(--fs,1))}
 #themePanel .tp-row > span{flex:1;min-width:0;overflow-wrap:break-word;line-height:1.25}
 #themePanel .tp-row input[type=color]{flex:none}
 #themePanel .tp-row input[type=color]{width:34px;height:22px;border:none;background:none;padding:0;cursor:pointer}
+#themePanel .tp-icon{flex:none;width:3.4em;text-align:center;background:var(--main-background);
+	color:var(--main-color);border:1px solid var(--expander-border,#6c6c6c);border-radius:6px;
+	padding:3px 4px;font-size:13px}
 #themePanel .tp-reset{margin-top:10px;width:100%;background:var(--button-background);color:var(--button-color);
 	border:1px solid var(--button-border);border-radius:6px;padding:6px;cursor:pointer;font-size:12px}
 
