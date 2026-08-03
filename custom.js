@@ -1035,13 +1035,14 @@
 		var todo = lines(area.value).slice(0, maxLines());
 		if (!todo.length) return;
 		sending = true; refresh();
+		hide();                    // out of the way at once: the sending carries on behind it
 		var i = 0;
 		// ⚠️ The composer is a CONTROLLED input and `handleSubmit` sends `this.state.text`, not the
 		// DOM value — so writing into the field is not enough. The `input` event has to be dispatched
 		// (it bubbles to the form, where gamja's onInput lives) and preact given a tick to store it,
 		// before the form is submitted.
 		(function step() {
-			if (i >= todo.length) { sending = false; hide(); return; }
+			if (i >= todo.length) { sending = false; return; }
 			var line = todo[i++];
 			input.value = line;
 			input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1087,6 +1088,30 @@
 		var inp = document.querySelector('.pm-row input[type=number]');
 		if (inp) inp.value = String(MDEF);
 	});
+
+	/* gamja builds /help from its own command list, so the entry has to be grafted in when the dialog
+	   is open. The commands list is the <dl> whose first <dt> starts with a slash (the other one holds
+	   the keyboard shortcuts), and the row is inserted alphabetically. Re-added on an interval, like
+	   every other node that lives inside preact's tree. */
+	function injectHelp() {
+		var dls = document.querySelectorAll('.dialog .dialog-body dl'), i, dl = null, first;
+		for (i = 0; i < dls.length; i++) {
+			first = dls[i].querySelector('dt');
+			if (first && first.textContent.trim().charAt(0) === '/') { dl = dls[i]; break; }
+		}
+		if (!dl || dl.querySelector('dt[data-paste]')) return;
+		var dt = document.createElement('dt');
+		dt.setAttribute('data-paste', ''); dt.textContent = '/paste';
+		var dd = document.createElement('dd');
+		dd.textContent = 'Send a block of text as one message per line';
+		var dts = dl.querySelectorAll('dt'), before = null;
+		for (i = 0; i < dts.length; i++) {
+			if (dts[i].textContent.trim().toLowerCase() > '/paste') { before = dts[i]; break; }
+		}
+		if (before) { dl.insertBefore(dt, before); dl.insertBefore(dd, before); }
+		else { dl.appendChild(dt); dl.appendChild(dd); }
+	}
+	setInterval(function () { if (document.querySelector('.dialog')) injectHelp(); }, 800);
 
 	// Tab-completion for `/paste`: gamja completes from its own command list, which cannot know about
 	// this one. Handled from three characters on (`/pas`) — no gamja command starts with that, so its
