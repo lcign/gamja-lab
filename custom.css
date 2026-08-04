@@ -220,6 +220,21 @@ html{font-size:calc(16px * var(--fs,1))}
 	color:var(--highlight-color);background:var(--highlight-bg)}
 #askPanel .ak-bar{display:flex;justify-content:flex-end;gap:8px;padding:.9rem 1rem}
 
+/* /help as a reading pane rather than a small box: gamja caps `.dialog-body` at 500px, which with its
+   own commands plus the ones added here meant a lot of scrolling in a narrow column. Wider, taller,
+   scrollable, and the command list laid out as a grid — the command in one column, its description in
+   the other, so the eye follows a single line. */
+.dialog .dialog-body{max-width:min(900px,94vw) !important;width:min(900px,94vw);
+	max-height:86vh;overflow:auto;box-sizing:border-box}
+.dialog .dialog-body dl{display:grid;grid-template-columns:max-content 1fr;column-gap:1.2em;
+	row-gap:.15em;align-items:baseline;margin:.4em 0}
+.dialog .dialog-body dt{white-space:nowrap}
+.dialog .dialog-body dd{margin:0;color:var(--gray)}
+@media(max-width:640px){
+	.dialog .dialog-body dl{grid-template-columns:1fr}
+	.dialog .dialog-body dd{margin:0 0 .4em 1.2em}
+}
+
 /* the "extra" tag in /help: derived from currentColor, so it stays legible whatever the theme */
 .dialog dt .cmd-extra{margin-left:.5em;padding:0 .3em;border:1px solid currentColor;border-radius:4px;
 	font-size:.68em;letter-spacing:.06em;text-transform:uppercase;opacity:.55;vertical-align:middle}
