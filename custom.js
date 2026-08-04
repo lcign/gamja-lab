@@ -1846,7 +1846,11 @@ function glExtraTag() {
 		var lines = host.querySelectorAll('.logline'), prev = null, live = on(), wrap = wrapOn();
 		for (var i = 0; i < lines.length; i++) {
 			var el = lines[i];
-			var isMsg = !!el.querySelector('.nick-caret');
+			/* ⚠️ An ACTION (`/me`) is rendered as `* nick text`, with NO carets — so recognising a
+			   message by the carets alone left those lines out of both the grouping and the indent, and
+			   a long one wrapped back under the timestamp. They carry the class `me-tell`. */
+			var isAction = el.classList.contains('me-tell');
+			var isMsg = isAction || !!el.querySelector('.nick-caret');
 			var nickEl = isMsg ? el.querySelector('a.nick') : null;
 			var nick = nickEl ? nickEl.textContent : null;
 			if (live && nick && nick === prev) el.setAttribute('data-samenick', '');
@@ -1892,8 +1896,11 @@ function glExtraTag() {
 			if (isMsg && nick && (wrap || same)) {
 				var ts = el.querySelector('a.timestamp');
 				var tsLen = ts ? ts.textContent.trim().length : (same ? 8 : 0);
+				/* prefix width in characters: `08:22:47 <nick> ` and `08:22:47 * nick ` happen to be the
+				   same length. On a grouped ACTION row the `* ` is a text node and stays visible, so its
+				   two characters come off the padding. */
 				var n = tsLen + nick.length + 4;
-				var pad = n + 'ch', ind = same ? '0' : '-' + n + 'ch';
+				var pad = (same && isAction ? n - 2 : n) + 'ch', ind = same ? '0' : '-' + n + 'ch';
 				if (el.style.paddingLeft !== pad) el.style.paddingLeft = pad;
 				if (el.style.textIndent !== ind) el.style.textIndent = ind;
 			} else if (el.style.paddingLeft) {
