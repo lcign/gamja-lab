@@ -42,8 +42,17 @@ real is marked read.
 
 **`/paste`** — gamja's composer is a single-line `<input>`, so a pasted block goes out as one message
 with the newlines turned into spaces. The dialog sends **one line per message**, 450 ms apart to stay
-clear of flood limits. Opens by typing `/paste` (Tab completes it) or by itself when multi-line text is
-pasted. Copying several lines out of a buffer also gets its newlines back.
+clear of flood limits, or **as a link**: the text is uploaded to [dpaste.com](https://dpaste.com) and
+only the URL is sent, expiring after 7 days. Opens by typing `/paste` (Tab completes it) or by itself
+when multi-line text is pasted. Copying several lines out of a buffer also gets its newlines back.
+
+⚠️ *Send as link* hands the text to a third party: whoever has the URL can read it, so it is a poor
+place for anything private. dpaste was picked because the upload has to work from the browser alone,
+and that needs the service to return **CORS headers** — without them the request goes out but the URL
+in the answer cannot be read. Of the services tried, only dpaste.com and api.pastes.dev do (and only
+when the request carries an `Origin`, which is why a `curl` test without one looks like a refusal);
+0x0.st, envs.sh, ttm.sh, paste.c-net.org and pastebin.com do not. Nothing server-side is involved, and
+gamja's CSP already allows `connect-src *`.
 
 **Image preview and link confirmation**, both off by default — an image link opens in a modal scaled
 to the window; other links can ask first, showing the host on its own line above the full address.
