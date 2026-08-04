@@ -1199,6 +1199,14 @@
 	});
 })();
 
+/* a small "extra" tag next to the commands added here, so /help makes clear which ones are not
+   gamja's own */
+function glExtraTag() {
+	var s = document.createElement('span');
+	s.className = 'cmd-extra'; s.textContent = 'extra';
+	return s;
+}
+
 /* ===================== /paste : send multi-line text =====================
    gamja's composer is a single-line <input>, so pasting a block of code into it silently turns the
    newlines into spaces and one message goes out instead of twenty. gamja's own paste handler only
@@ -1391,6 +1399,7 @@
 		if (!dl || dl.querySelector('dt[data-paste]')) return;
 		var dt = document.createElement('dt');
 		dt.setAttribute('data-paste', ''); dt.textContent = '/paste';
+		dt.appendChild(glExtraTag());
 		var dd = document.createElement('dd');
 		dd.textContent = 'Send a block of text as one message per line';
 		var dts = dl.querySelectorAll('dt'), before = null;
@@ -1728,6 +1737,7 @@
 		 ['/unignoretext [words]', 'Drop a text rule']].forEach(function (pair) {
 			var dt = document.createElement('dt');
 			dt.setAttribute('data-ign', ''); dt.textContent = pair[0];
+			dt.appendChild(glExtraTag());
 			var dd = document.createElement('dd'); dd.textContent = pair[1];
 			var dts = dl.querySelectorAll('dt'), before = null;
 			for (var j = 0; j < dts.length; j++) {

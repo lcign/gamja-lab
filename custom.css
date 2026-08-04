@@ -220,6 +220,10 @@ html{font-size:calc(16px * var(--fs,1))}
 	color:var(--highlight-color);background:var(--highlight-bg)}
 #askPanel .ak-bar{display:flex;justify-content:flex-end;gap:8px;padding:.9rem 1rem}
 
+/* the "extra" tag in /help: derived from currentColor, so it stays legible whatever the theme */
+.dialog dt .cmd-extra{margin-left:.5em;padding:0 .3em;border:1px solid currentColor;border-radius:4px;
+	font-size:.68em;letter-spacing:.06em;text-transform:uppercase;opacity:.55;vertical-align:middle}
+
 /* ignored lines, and the little dialog that manages them */
 #buffer .logline[data-ignored]{display:none}
 #ignBackdrop{position:fixed;inset:0;z-index:10071;background:rgba(0,0,0,.6);display:flex;
