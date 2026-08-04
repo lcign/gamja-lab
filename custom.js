@@ -1659,7 +1659,8 @@
 		input.value = '';
 		input.dispatchEvent(new Event('input', { bubbles: true }));
 		pass();
-		show();
+		// with a nick given the command acts straight away and stays quiet: the effect is visible in the
+		// buffer, where the lines disappear or come back. The dialog is for the argument-less form.
 	}, true);
 
 	document.addEventListener('gamja-extra-panel', function (ev) {
