@@ -1214,7 +1214,8 @@
 		try { localStorage.setItem(MKEY, String(v)); } catch (e) {}
 		return v;
 	}
-	var backdrop = null, area = null, info = null, sendBtn = null, sending = false;
+	var backdrop = null, area = null, info = null, sendBtn = null, linkBtn = null, sending = false;
+	var PASTE_DAYS = 7;
 
 	function composer() { return document.querySelector('#composer input[type=text]'); }
 
@@ -1240,7 +1241,12 @@
 		var bar = document.createElement('div'); bar.className = 'pp-bar';
 		info = document.createElement('span'); info.className = 'pp-info';
 		sendBtn = document.createElement('button'); sendBtn.type = 'button'; sendBtn.className = 'lp-sort active';
-		bar.appendChild(info); bar.appendChild(sendBtn);
+		linkBtn = document.createElement('button'); linkBtn.type = 'button'; linkBtn.className = 'lp-sort';
+		linkBtn.textContent = 'Send as link';
+		linkBtn.title = 'Uploads the text to dpaste.com and sends the URL instead. It leaves this network: ' +
+			'anyone with the link can read it, and it expires after ' + PASTE_DAYS + ' days.';
+		linkBtn.addEventListener('click', sendAsLink);
+		bar.appendChild(info); bar.appendChild(linkBtn); bar.appendChild(sendBtn);
 		panel.appendChild(head); panel.appendChild(area); panel.appendChild(bar);
 		backdrop.appendChild(panel);
 		document.body.appendChild(backdrop);
@@ -1260,6 +1266,7 @@
 		info.classList.toggle('hot', over);
 		sendBtn.textContent = sending ? 'sending…' : 'Send ' + Math.min(n, cap) + ' messages';
 		sendBtn.disabled = sending || n === 0;
+		if (linkBtn) linkBtn.disabled = sending || n === 0;
 	}
 
 	function show(txt) {
@@ -1271,6 +1278,44 @@
 		area.focus();
 	}
 	function hide() { if (backdrop) backdrop.classList.add('hidden'); }
+
+	/* One message with a link instead of many: the text goes to dpaste.com and only the URL is sent.
+	   ⚠️ No server-side piece, but it does need the service to send CORS headers — otherwise the browser
+	   can post and never read the answer, which is exactly what ruled out x0.at once before. dpaste
+	   echoes the Origin back, and gamja's CSP already allows `connect-src *`.
+	   ⚠️ The text LEAVES the network: anyone holding the URL can read it, hence the warning on the
+	   button and the expiry. */
+	function sendAsLink() {
+		var input = composer(); if (!input || !input.form) return;
+		var text = lines(area.value).join('\n');
+		if (!text) return;
+		sending = true; refresh();
+		info.classList.remove('hot');
+		info.textContent = 'uploading…';
+		var body = new FormData();
+		body.append('content', text);
+		body.append('syntax', 'text');
+		body.append('expiry_days', String(PASTE_DAYS));
+		fetch('https://dpaste.com/api/v2/', { method: 'POST', body: body })
+			.then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+			.then(function (url) {
+				url = (url || '').trim();
+				if (!/^https?:\/\//.test(url)) throw new Error('no URL in the answer');
+				sending = false;
+				hide();
+				input.value = url;
+				input.dispatchEvent(new Event('input', { bubbles: true }));
+				setTimeout(function () {
+					input.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+				}, 60);
+			})
+			.catch(function (err) {
+				sending = false;
+				info.textContent = 'upload failed (' + err.message + ') — send as lines instead';
+				info.classList.add('hot');
+				refresh();
+			});
+	}
 
 	// one message per line, through gamja's own form: the value is written into the composer and the
 	// form is submitted, which is exactly what pressing Enter does — no reaching into its state.
