@@ -28,6 +28,10 @@ and 54 commits behind. These files hook gamja's DOM and CSS variables, not a sta
 - **`/list`** dialog, sortable and filterable. **Buffer search** with ⌘F over the rendered lines.
 - **Image preview** and **link confirmation**, both off by default — ⚠️ the preview needs `img-src` in
   the page's CSP, see `index.html.example`.
+- **`/ignore <nick>`** hides that person's lines, matching **nick and host**, so a nick change does not
+  defeat it. `/ignore` alone (or *Ignored people* in the panel) opens the list, with a *remove* on each
+  row; `/unignore <nick|host>` also works. ⚠️ Cosmetic: the messages still arrive and soju still stores
+  them, and unread state stays gamja's business.
 - **Text shortcuts** `:shrug` `:tableflip` `:unflip`, on send and in what you receive.
 - **Timestamp as plain text**, so a selection can start there; the permalink is an option.
 - **Command history** ↑/↓, readable `/help`, working Option+letter shortcuts on macOS, `Alt+↑/↓` in the

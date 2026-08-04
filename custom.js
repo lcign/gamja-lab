@@ -1539,6 +1539,150 @@
 	});
 })();
 
+/* ===================== /ignore =====================
+   A local ignore list: matching lines are removed from the buffer. Both the NICK and the HOST are
+   stored, because a nick change would otherwise defeat it — the host comes from the title gamja puts on
+   `a.nick` (`realname (user@host)`), which is filled in from the initial WHO.
+   ⚠️ Cosmetic only, and it cannot be otherwise from here: the messages still arrive, soju still stores
+   them, so another client shows them; and unread state and notifications stay gamja's business.
+   `/ignore <nick>` adds, `/ignore` lists, `/unignore <nick|host>` removes. */
+(function () {
+	var KEY = 'gamja_ignores';
+	function load() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
+	function save(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) {} }
+	function composer() { return document.querySelector('#composer input[type=text]'); }
+
+	// title looks like `realname (user@host)` or just `user@host`, plus optional extra lines
+	function hostOf(el) {
+		var ti = el ? (el.getAttribute('title') || '') : '';
+		var m = /@([A-Za-z0-9._:\-\/]+)/.exec(ti);
+		return m ? m[1].toLowerCase() : '';
+	}
+	function hostFor(nick) {
+		var as = document.querySelectorAll('#buffer a.nick, #member-list a.nick'), i, a;
+		for (i = as.length - 1; i >= 0; i--) {
+			a = as[i];
+			if ((a.getAttribute('data-full') || a.textContent || '').trim().toLowerCase() === nick) {
+				var h = hostOf(a);
+				if (h) return h;
+			}
+		}
+		return '';
+	}
+
+	function pass() {
+		var host = document.getElementById('buffer');
+		if (!host) return;
+		var list = load();
+		var lines = host.querySelectorAll('.logline'), i, j;
+		for (i = 0; i < lines.length; i++) {
+			var el = lines[i], nickEl = el.querySelector('a.nick');
+			var hit = false;
+			if (nickEl && list.length) {
+				var n = (nickEl.getAttribute('data-full') || nickEl.textContent || '').trim().toLowerCase();
+				var h = hostOf(nickEl);
+				for (j = 0; j < list.length; j++) {
+					if ((list[j].n && list[j].n === n) || (list[j].h && h && list[j].h === h)) { hit = true; break; }
+				}
+			}
+			if (hit) el.setAttribute('data-ignored', ''); else el.removeAttribute('data-ignored');
+		}
+	}
+	setInterval(pass, 700);
+	document.addEventListener('gamja-refresh', pass);
+	pass();
+
+	/* the list, with a way out of it: a dialog rather than a message in the buffer, since injecting a
+	   line into gamja's own log would mean inserting a node into preact's tree */
+	var wrap = null, listEl = null;
+	function build() {
+		if (wrap) return;
+		wrap = document.createElement('div');
+		wrap.id = 'ignBackdrop'; wrap.className = 'hidden';
+		var panel = document.createElement('div'); panel.id = 'ignPanel';
+		var head = document.createElement('div'); head.className = 'lp-head';
+		var h = document.createElement('div'); h.className = 'lp-h'; h.textContent = 'Ignored';
+		var close = document.createElement('button');
+		close.type = 'button'; close.className = 'lp-close'; close.textContent = '\u2715'; close.title = 'Close';
+		head.appendChild(h); head.appendChild(close);
+		listEl = document.createElement('div'); listEl.className = 'ig-list';
+		panel.appendChild(head); panel.appendChild(listEl);
+		wrap.appendChild(panel);
+		document.body.appendChild(wrap);
+		close.addEventListener('click', hide);
+		wrap.addEventListener('click', function (e) { if (e.target === wrap) hide(); });
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && wrap && !wrap.classList.contains('hidden')) hide();
+		});
+	}
+	function hide() { if (wrap) wrap.classList.add('hidden'); }
+	function show() {
+		build();
+		var list = load();
+		listEl.textContent = '';
+		if (!list.length) {
+			var none = document.createElement('div');
+			none.className = 'ig-none'; none.textContent = 'nobody — /ignore <nick> to add someone';
+			listEl.appendChild(none);
+		}
+		list.forEach(function (it, idx) {
+			var row = document.createElement('div'); row.className = 'ig-row';
+			var who = document.createElement('span'); who.className = 'ig-who';
+			who.textContent = (it.n || '?') + (it.h ? '  @' + it.h : '  (no host known)');
+			var del = document.createElement('button');
+			del.type = 'button'; del.className = 'lp-sort'; del.textContent = 'remove';
+			del.addEventListener('click', function () {
+				var cur = load(); cur.splice(idx, 1); save(cur); pass(); show();
+			});
+			row.appendChild(who); row.appendChild(del);
+			listEl.appendChild(row);
+		});
+		wrap.classList.remove('hidden');
+	}
+
+	document.addEventListener('keydown', function (e) {
+		if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+		var input = composer();
+		if (!input || e.target !== input) return;
+		var m = /^\/(un)?ignore(?:\s+(\S+))?\s*$/i.exec(input.value);
+		if (!m) return;
+		e.preventDefault(); e.stopPropagation();
+		var un = !!m[1], who = (m[2] || '').toLowerCase(), list = load();
+		if (!who) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); show(); return; }
+		if (un) {
+			list = list.filter(function (it) { return it.n !== who && it.h !== who; });
+		} else {
+			var already = list.some(function (it) { return it.n === who; });
+			if (!already) list.push({ n: who, h: hostFor(who) });
+		}
+		save(list);
+		input.value = '';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		pass();
+		show();
+	}, true);
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.ig-open')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom';
+		var lab = document.createElement('span');
+		lab.textContent = 'Ignored people';
+		var btn = document.createElement('button');
+		btn.type = 'button'; btn.className = 'lp-sort ig-open'; btn.textContent = 'manage';
+		btn.style.flex = 'none';
+		btn.addEventListener('click', show);
+		row.appendChild(lab); row.appendChild(btn);
+		panel.appendChild(row);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(KEY); } catch (e) {}
+		pass();
+	});
+})();
+
 /* ===================== text shortcuts (:shrug) =====================
    `:shrug` and friends are expanded when the message is sent. Only outgoing text is touched — what
    other people write is left exactly as they wrote it.
