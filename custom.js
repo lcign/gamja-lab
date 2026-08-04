@@ -1582,6 +1582,37 @@
 			   the layout (see custom.css), so their column has to be given back here. A run needs no
 			   negative indent, since its first line already starts in the text column. */
 			var same = el.hasAttribute('data-samenick');
+			/* ⚠️ Removing the timestamp and the nick from the layout leaves the SPACES that separated
+			   them behind, and `.logline` is `white-space:pre-wrap`, so those spaces are rendered — two
+			   of them, pushing the text past the column the padding already provides. They are blanked
+			   here and stashed in `data-ws`, so turning the option off puts them back without waiting
+			   for preact to re-render the line. */
+			if (same) {
+				if (!el.hasAttribute('data-ws')) {
+					var kept = [], kids = el.childNodes, k, nd;
+					for (k = 0; k < kids.length; k++) {
+						nd = kids[k];
+						if (nd.nodeType === 1) {
+							if (nd.classList.contains('nick-caret') || nd.classList.contains('nick') ||
+								nd.classList.contains('timestamp')) continue;
+							break;
+						}
+						if (nd.nodeType === 3) {
+							if (!nd.nodeValue.trim()) { kept.push([k, nd.nodeValue]); nd.nodeValue = ''; }
+							else break;
+						}
+					}
+					el.setAttribute('data-ws', JSON.stringify(kept));
+				}
+			} else if (el.hasAttribute('data-ws')) {
+				try {
+					JSON.parse(el.getAttribute('data-ws')).forEach(function (pair) {
+						var nd = el.childNodes[pair[0]];
+						if (nd && nd.nodeType === 3 && nd.nodeValue === '') nd.nodeValue = pair[1];
+					});
+				} catch (e) {}
+				el.removeAttribute('data-ws');
+			}
 			if (isMsg && nick && (wrap || same)) {
 				var ts = el.querySelector('a.timestamp');
 				var tsLen = ts ? ts.textContent.trim().length : (same ? 8 : 0);
