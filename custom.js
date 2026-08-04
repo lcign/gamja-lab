@@ -1570,19 +1570,36 @@
 		return '';
 	}
 
+	/* The text of the message only, without timestamp and nick: everything after the closing caret.
+	   Matching the whole line would also hit a nick that happens to contain the word. */
+	function bodyOf(el) {
+		var carets = el.querySelectorAll('.nick-caret');
+		if (!carets.length) return (el.textContent || '');
+		var last = carets[carets.length - 1], out = '', nd = last.nextSibling;
+		while (nd) { out += nd.textContent || ''; nd = nd.nextSibling; }
+		return out;
+	}
+
 	function pass() {
 		var host = document.getElementById('buffer');
 		if (!host) return;
 		var list = load();
 		var lines = host.querySelectorAll('.logline'), i, j;
+		var texts = list.filter(function (it) { return it.t; });
 		for (i = 0; i < lines.length; i++) {
 			var el = lines[i], nickEl = el.querySelector('a.nick');
 			var hit = false;
-			if (nickEl && list.length) {
-				var n = (nickEl.getAttribute('data-full') || nickEl.textContent || '').trim().toLowerCase();
-				var h = hostOf(nickEl);
+			if (list.length) {
+				var n = nickEl ? (nickEl.getAttribute('data-full') || nickEl.textContent || '').trim().toLowerCase() : '';
+				var h = nickEl ? hostOf(nickEl) : '';
 				for (j = 0; j < list.length; j++) {
-					if ((list[j].n && list[j].n === n) || (list[j].h && h && list[j].h === h)) { hit = true; break; }
+					if ((list[j].n && n && list[j].n === n) || (list[j].h && h && list[j].h === h)) { hit = true; break; }
+				}
+				if (!hit && texts.length) {
+					var body = bodyOf(el).toLowerCase();
+					for (j = 0; j < texts.length; j++) {
+						if (body.indexOf(texts[j].t) >= 0) { hit = true; break; }
+					}
 				}
 			}
 			if (hit) el.setAttribute('data-ignored', ''); else el.removeAttribute('data-ignored');
@@ -1622,13 +1639,16 @@
 		listEl.textContent = '';
 		if (!list.length) {
 			var none = document.createElement('div');
-			none.className = 'ig-none'; none.textContent = 'nobody — /ignore <nick> to add someone';
+			none.className = 'ig-none';
+			none.textContent = 'nothing — /ignore <nick> for a person, /ignoretext <words> for anything containing them';
 			listEl.appendChild(none);
 		}
 		list.forEach(function (it, idx) {
 			var row = document.createElement('div'); row.className = 'ig-row';
 			var who = document.createElement('span'); who.className = 'ig-who';
-			who.textContent = (it.n || '?') + (it.h ? '  @' + it.h : '  (no host known)');
+			who.textContent = it.t
+				? 'text:  ' + it.t
+				: (it.n || '?') + (it.h ? '  @' + it.h : '  (no host known)');
 			var del = document.createElement('button');
 			del.type = 'button'; del.className = 'lp-sort'; del.textContent = 'remove';
 			del.addEventListener('click', function () {
@@ -1644,16 +1664,20 @@
 		if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
 		var input = composer();
 		if (!input || e.target !== input) return;
-		var m = /^\/(un)?ignore(?:\s+(\S+))?\s*$/i.exec(input.value);
+		var m = /^\/(un)?ignore(text)?(?:\s+(.*\S))?\s*$/i.exec(input.value);
 		if (!m) return;
 		e.preventDefault(); e.stopPropagation();
-		var un = !!m[1], who = (m[2] || '').toLowerCase(), list = load();
-		if (!who) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); show(); return; }
-		if (un) {
-			list = list.filter(function (it) { return it.n !== who && it.h !== who; });
+		var un = !!m[1], isText = !!m[2], arg = (m[3] || '').toLowerCase(), list = load();
+		if (!arg) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); show(); return; }
+		if (un && isText) {
+			list = list.filter(function (it) { return it.t !== arg; });
+		} else if (un) {
+			list = list.filter(function (it) { return it.n !== arg && it.h !== arg; });
+		} else if (isText) {
+			if (!list.some(function (it) { return it.t === arg; })) list.push({ t: arg });
 		} else {
-			var already = list.some(function (it) { return it.n === who; });
-			if (!already) list.push({ n: who, h: hostFor(who) });
+			var already = list.some(function (it) { return it.n === arg; });
+			if (!already) list.push({ n: arg, h: hostFor(arg) });
 		}
 		save(list);
 		input.value = '';
@@ -1662,6 +1686,58 @@
 		// with a nick given the command acts straight away and stays quiet: the effect is visible in the
 		// buffer, where the lines disappear or come back. The dialog is for the argument-less form.
 	}, true);
+
+	/* Tab-completion for these commands, which gamja's own list cannot know about. With an ambiguous
+	   prefix it completes as far as the candidates agree — `/ig` gives `/ignore`, and one more Tab after
+	   typing `t` gives `/ignoretext`. */
+	var CMDS = ['ignore', 'ignoretext', 'unignore', 'unignoretext'];
+	document.addEventListener('keydown', function (e) {
+		if (e.key !== 'Tab' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+		var input = composer();
+		if (!input || e.target !== input) return;
+		if (!/^\/[a-z]*$/i.test(input.value)) return;
+		var tok = input.value.slice(1).toLowerCase();
+		if (tok.length < 2) return;
+		var hits = CMDS.filter(function (c) { return c.indexOf(tok) === 0; });
+		if (!hits.length) return;
+		var out = hits[0];
+		if (hits.length > 1) {
+			out = '';
+			for (var i = 0; i < hits[0].length; i++) {
+				var ch = hits[0][i];
+				if (hits.every(function (c) { return c[i] === ch; })) out += ch; else break;
+			}
+		}
+		if (out === tok) return;
+		e.preventDefault(); e.stopPropagation();
+		input.value = '/' + out + (hits.length === 1 ? ' ' : '');
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}, true);
+
+	// and the same entries in /help, where gamja lists its own commands
+	function injectHelp() {
+		var dls = document.querySelectorAll('.dialog .dialog-body dl'), i, dl = null, first;
+		for (i = 0; i < dls.length; i++) {
+			first = dls[i].querySelector('dt');
+			if (first && first.textContent.trim().charAt(0) === '/') { dl = dls[i]; break; }
+		}
+		if (!dl || dl.querySelector('dt[data-ign]')) return;
+		[['/ignore [nick]', 'Hide someone by nick and host, or list what is ignored'],
+		 ['/ignoretext [words]', 'Hide any message containing those words'],
+		 ['/unignore [nick]', 'Stop ignoring, or open the list'],
+		 ['/unignoretext [words]', 'Drop a text rule']].forEach(function (pair) {
+			var dt = document.createElement('dt');
+			dt.setAttribute('data-ign', ''); dt.textContent = pair[0];
+			var dd = document.createElement('dd'); dd.textContent = pair[1];
+			var dts = dl.querySelectorAll('dt'), before = null;
+			for (var j = 0; j < dts.length; j++) {
+				if (dts[j].textContent.trim().toLowerCase() > pair[0].toLowerCase()) { before = dts[j]; break; }
+			}
+			if (before) { dl.insertBefore(dt, before); dl.insertBefore(dd, before); }
+			else { dl.appendChild(dt); dl.appendChild(dd); }
+		});
+	}
+	setInterval(function () { if (document.querySelector('.dialog')) injectHelp(); }, 800);
 
 	document.addEventListener('gamja-extra-panel', function (ev) {
 		var panel = ev.detail && ev.detail.panel;
