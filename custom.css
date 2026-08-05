@@ -446,6 +446,15 @@ html{font-size:calc(16px * var(--fs,1))}
    silently overrode that and brought the half-row highlight back. */
 #buffer-list li.active a{color:var(--bl-active-color,var(--sidebar-background))}
 
+/* /image: the upload notice, and the outline that says a file may be dropped */
+#imgToast{position:fixed;right:14px;bottom:52px;z-index:10041;max-width:min(60ch,80vw);
+	background:var(--sidebar-background);color:var(--main-color);
+	border:1px solid var(--expander-border,#6c6c6c);border-radius:8px;padding:7px 11px;font-size:.85rem;
+	box-shadow:0 8px 28px rgba(0,0,0,.5)}
+#imgToast.hidden{display:none}
+#imgToast.bad{color:var(--red);border-color:var(--red)}
+body.img-drop #buffer{outline:2px dashed var(--link-color,var(--green));outline-offset:-6px}
+
 /* Extra panel: numeric row + warning + section separator */
 #themePanel .tp-num{width:4.2rem;background:var(--main-background);color:var(--main-color);
 	border:1px solid var(--expander-border,#6c6c6c);border-radius:6px;padding:0.3rem 0.4rem;font-size:0.95rem}

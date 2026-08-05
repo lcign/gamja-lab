@@ -1966,6 +1966,189 @@ function glExtraTag() {
 	});
 })();
 
+/* ===================== /image : upload a picture and send the link =====================
+   soju can host files itself (`file-upload` in its config, `SOJU.IM/FILEHOST` in ISUPPORT, and gamja
+   already implements the client side), but that host would have to be reachable by everyone in the
+   channel — which means exposing the machine it runs on. An outside service keeps the address out of
+   it: whoever opens the link fetches from there, not from home.
+   ⚠️ Same rule as /paste: the service must send CORS headers, or the upload succeeds and the browser
+   is not allowed to read the URL that comes back — which is the only thing wanted. Measured with an
+   `Origin` header, 2026-08-05: litterbox and tmpfiles.org do send them, catbox.moe (the permanent
+   sibling), uguu.se, x0.at and file.io do not, and 0x0.st has closed uploads altogether.
+   litterbox it is: no account, no key, and an expiry — the picture does not stay out there forever. */
+(function () {
+	var KEY = 'gamja_img_time', DEF = '72h';
+	var TIMES = ['1h', '12h', '24h', '72h'];
+	var API = 'https://litterbox.catbox.moe/resources/internals/api.php';
+	var fileInput = null, toast = null, hideTimer = null;
+
+	function expiry() {
+		try {
+			var v = localStorage.getItem(KEY);
+			return TIMES.indexOf(v) >= 0 ? v : DEF;
+		} catch (e) { return DEF; }
+	}
+	function composer() { return document.querySelector('#composer input[type=text]'); }
+
+	function say(text, bad) {
+		if (!toast) {
+			toast = document.createElement('div');
+			toast.id = 'imgToast';
+			document.body.appendChild(toast);
+		}
+		toast.textContent = text;
+		toast.classList.toggle('bad', !!bad);
+		toast.classList.remove('hidden');
+		clearTimeout(hideTimer);
+		if (text) hideTimer = setTimeout(function () { toast.classList.add('hidden'); }, bad ? 6000 : 2500);
+	}
+
+	/* The URL goes out through gamja's own form — value in, submit — exactly as pressing Enter does,
+	   so nothing reaches into its state. */
+	function sendURL(url) {
+		var input = composer();
+		if (!input || !input.form) return;
+		input.value = url;
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		setTimeout(function () {
+			input.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+		}, 60);
+	}
+
+	function upload(file) {
+		if (!file) return;
+		if (!/^image\//.test(file.type)) { say('only images — that is not one', true); return; }
+		say('uploading ' + (file.name || 'image') + '…');
+		var body = new FormData();
+		body.append('reqtype', 'fileupload');
+		body.append('time', expiry());
+		body.append('fileToUpload', file, file.name || 'image.png');
+		fetch(API, { method: 'POST', body: body })
+			.then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+			.then(function (url) {
+				url = (url || '').trim();
+				if (!/^https?:\/\//.test(url)) throw new Error('no URL in the answer');
+				say('');
+				if (toast) toast.classList.add('hidden');
+				sendURL(url);
+			})
+			.catch(function (err) { say('upload failed: ' + err.message, true); });
+	}
+
+	function pick() {
+		if (!fileInput) {
+			fileInput = document.createElement('input');
+			fileInput.type = 'file';
+			fileInput.accept = 'image/*';
+			fileInput.style.display = 'none';
+			fileInput.addEventListener('change', function () {
+				var f = fileInput.files && fileInput.files[0];
+				fileInput.value = '';           // so the same picture can be chosen twice in a row
+				upload(f);
+			});
+			document.body.appendChild(fileInput);
+		}
+		fileInput.click();
+	}
+
+	// `/image` in the composer opens the picker instead of going out as an unknown command
+	document.addEventListener('submit', function (e) {
+		var input = composer();
+		if (!input || !e.target || e.target !== input.form) return;
+		if (input.value.trim().toLowerCase() !== '/image') return;
+		e.preventDefault(); e.stopPropagation();
+		input.value = '';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		pick();
+	}, true);
+
+	/* Drag and drop over the buffer. Both handlers are needed: without preventDefault on dragover the
+	   browser refuses the drop, and without it on drop the picture would simply replace the page. */
+	function isFileDrag(e) {
+		var d = e.dataTransfer;
+		return d && d.types && Array.prototype.indexOf.call(d.types, 'Files') >= 0;
+	}
+	document.addEventListener('dragover', function (e) {
+		if (!isFileDrag(e)) return;
+		e.preventDefault();
+		document.body.classList.add('img-drop');
+	}, true);
+	document.addEventListener('dragleave', function (e) {
+		if (e.relatedTarget) return;                        // still inside the window
+		document.body.classList.remove('img-drop');
+	}, true);
+	document.addEventListener('drop', function (e) {
+		if (!isFileDrag(e)) return;
+		e.preventDefault(); e.stopPropagation();
+		document.body.classList.remove('img-drop');
+		upload(e.dataTransfer.files && e.dataTransfer.files[0]);
+	}, true);
+
+	// Tab completion, as for /paste: from three characters on, and no gamja command starts with `ima`
+	document.addEventListener('keydown', function (e) {
+		if (e.key !== 'Tab' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+		var input = composer();
+		if (!input || e.target !== input) return;
+		if (!/^\/[a-z]*$/i.test(input.value)) return;
+		var tok = input.value.slice(1).toLowerCase();
+		if (tok.length < 3 || 'image'.indexOf(tok) !== 0) return;
+		e.preventDefault(); e.stopPropagation();
+		input.value = '/image';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}, true);
+
+	function injectHelp() {
+		var dls = document.querySelectorAll('.dialog dl'), dl = null, i, first;
+		for (i = 0; i < dls.length; i++) {
+			first = dls[i].querySelector('dt');
+			if (first && first.textContent.trim().charAt(0) === '/') { dl = dls[i]; break; }
+		}
+		if (!dl || dl.querySelector('dt[data-image]')) return;
+		var dt = document.createElement('dt');
+		dt.setAttribute('data-image', ''); dt.textContent = '/image';
+		dt.appendChild(glExtraTag());
+		var dd = document.createElement('dd');
+		dd.textContent = 'Upload a picture to litterbox and send the link (drag and drop works too)';
+		var dts = dl.querySelectorAll('dt'), before = null;
+		for (i = 0; i < dts.length; i++) {
+			if (dts[i].textContent.trim().toLowerCase() > '/image') { before = dts[i]; break; }
+		}
+		if (before) { dl.insertBefore(dt, before); dl.insertBefore(dd, before); }
+		else { dl.appendChild(dt); dl.appendChild(dd); }
+	}
+	setInterval(function () { if (document.querySelector('.dialog')) injectHelp(); }, 800);
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.img-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom img-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Keep /image uploads for';
+		var sel = document.createElement('select');
+		sel.className = 'tp-icon';
+		sel.style.width = 'auto';
+		sel.title = 'The picture leaves this network: whoever holds the link can see it until it expires.';
+		TIMES.forEach(function (t) {
+			var o = document.createElement('option');
+			o.value = t; o.textContent = t;
+			if (t === expiry()) o.selected = true;
+			sel.appendChild(o);
+		});
+		sel.addEventListener('change', function () {
+			try { localStorage.setItem(KEY, sel.value); } catch (e) {}
+		});
+		row.appendChild(lab); row.appendChild(sel);
+		panel.appendChild(row);
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		try { localStorage.removeItem(KEY); } catch (e) {}
+		var sel = document.querySelector('.img-row select');
+		if (sel) sel.value = DEF;
+	});
+})();
+
 /* ===================== back to the present on send =====================
    Pressing Enter while reading history left the view where it was: gamja never scrolls on submit —
    in the whole bundle there are only two scroll calls, one to restore a buffer's saved position and
