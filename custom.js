@@ -1966,6 +1966,46 @@ function glExtraTag() {
 	});
 })();
 
+/* ===================== back to the present on send =====================
+   Pressing Enter while reading history left the view where it was: gamja never scrolls on submit —
+   in the whole bundle there are only two scroll calls, one to restore a buffer's saved position and
+   one that follows the content when `stickToBottom` is set. That flag is only true if you were
+   already at the bottom, so a reply written from halfway up went out unseen.
+   Scrolling here at submit time is enough to hand the rest back to gamja: the scroll event sets its
+   `stickToBottom` (debounced by 100 ms), and the echo of the message then lands with the view
+   following it. The second, later call covers a round-trip faster than that debounce. */
+(function () {
+	function bottom() {
+		var host = document.getElementById('buffer');
+		if (host) host.scrollTop = host.scrollHeight;
+	}
+	document.addEventListener('submit', function (ev) {
+		var f = ev.target;
+		if (!f || !f.closest || !f.closest('#composer')) return;
+		bottom();
+		setTimeout(bottom, 300);
+	}, true);
+})();
+
+/* ===================== spell checking in the composer =====================
+   gamja never disables it — the bundle only sets `autocomplete="off"` — so what you get is whatever
+   the browser defaults to, which on a plain <input> is often nothing at all. Asking for it explicitly
+   is two attributes; `autocorrect` is Safari's and ignored elsewhere.
+   ⚠️ No `autocapitalize`: on IRC it would capitalise nicks and commands.
+   The language is left to the browser on purpose. Setting `lang` here would pin the dictionary to one
+   language, and this composer writes English in one channel and Italian in the next. */
+(function () {
+	function mark() {
+		var el = document.querySelector('#composer input[type=text]');
+		if (!el || el.getAttribute('spellcheck') === 'true') return;
+		el.setAttribute('spellcheck', 'true');
+		el.setAttribute('autocorrect', 'on');
+	}
+	mark();
+	document.addEventListener('gamja-refresh', mark);
+	document.addEventListener('focusin', mark, true);
+})();
+
 /* ===================== row marks =====================
    The glyphs in front of rows and links, editable from the panel. Only the character is stored; the
    CSS variables it feeds already have these as their defaults, so an empty field means "back to the
