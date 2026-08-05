@@ -63,14 +63,21 @@ html{font-size:calc(16px * var(--fs,1))}
    taller than most windows. The panel itself is a flex column (head, tabs, panes, Reset) and each
    PANE is the two-column grid — the color rows flow into two columns, everything else spans both.
    Below 560px (phones) the panes go back to a single column. */
+/* ⚠️ The panel needs a ceiling. Options grew past the window and simply ran off it: nothing scrolled,
+   because the panel had no height limit and so never overflowed anything. The cap goes here, and the
+   PANE scrolls — head, tabs and Reset stay put, which is what makes the button reachable. */
 #themePanel{background:var(--sidebar-background);color:var(--main-color);border:1px solid var(--expander-border);
 	border-radius:10px;padding:12px;width:480px;max-width:92vw;box-sizing:border-box;
+	max-height:88vh;
 	box-shadow:0 10px 40px rgba(0,0,0,.5);
 	display:flex;flex-direction:column}
 /* each tab's pane is a grid; the rest of the rows span every column. With twenty-nine colours two
    columns were tall again, so on a wide window the panel widens to FOUR — the options pane keeps one
    row per setting, since those rows are label + control and read better full width. */
-#themePanel .tp-pane{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start}
+/* ⚠️ `min-height:0` is what makes the scrolling work: a flex item defaults to `min-height:auto`, so it
+   refuses to shrink below its content and the overflow never happens — the classic flexbox trap. */
+#themePanel .tp-pane{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start;
+	flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
 /* ⚠️ The width follows the TAB, not the window: at 900px the Options rows (label on the left, control
    on the right) were stretched across half a screen with nothing in between. The wide panel and the
    four colour columns only apply while Colors is showing — custom.js puts `wide` on the panel. */

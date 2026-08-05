@@ -25,6 +25,8 @@ and 54 commits behind. These files hook gamja's DOM and CSS variables, not a sta
 - **⟳ reload** in the buffer header, for a channel that renders empty after joining.
 - **`/paste`**: one message per line, or uploaded to dpaste.com and sent as a link — ⚠️ that leaves the
   network and expires in 7 days.
+- **`/image`**: a picture chosen or dragged in goes to litterbox.catbox.moe and the link is sent — ⚠️ it
+  leaves the network, and expires after the time set in the panel (1h to 72h).
 - **`/list`** dialog, sortable and filterable. **Buffer search** with ⌘F over the rendered lines.
 - **Image preview** and **link confirmation**, both off by default — ⚠️ the preview needs `img-src` in
   the page's CSP, see `index.html.example`.

@@ -55,6 +55,11 @@ nothing.
 - Emoji (📌 🐇) are drawn by a colour font and ignore `color`; the pin picker approximates with a
   `hue-rotate` filter. A tinted SVG via `mask` is not an option either — gamja's CSP blocks `data:`
   URIs.
+- Uploading needs the service to send **CORS headers**, or the browser posts the file and is not
+  allowed to read the URL that comes back — the only thing wanted. Measured 2026-08-05: litterbox
+  (`/image`) and tmpfiles.org send them, catbox.moe, uguu.se, x0.at and file.io do not, and 0x0.st has
+  closed uploads. soju can host files itself, but that host has to be reachable by everyone in the
+  channel, which means exposing the machine it runs on.
 - **Mobile is not supported.** On iPhone Safari, elements appended to `<body>` outside preact's tree
   receive only `pointerdown`, never `click`/`touchend`, so custom tap controls are unreliable. Restyle
   gamja's native elements instead.
