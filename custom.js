@@ -1843,6 +1843,14 @@ function glExtraTag() {
 	function pass() {
 		var host = document.getElementById('buffer');
 		if (!host) return;
+		/* ⚠️ The indent COSTS HEIGHT: it narrows the continuation of a wrapped message, so a line that
+		   fitted in two rows can take three. gamja scrolls to the bottom while rendering, this pass runs
+		   afterwards, and the buffer grows underneath — which left a freshly opened buffer short of the
+		   end, with the last line cut by the composer. So: note where we were before touching anything,
+		   and if that was the bottom, go back to it once the pass is done.
+		   ⚠️ Only when the pass CHANGED something. This runs every 700 ms, and snapping on every tick
+		   would drag the view back down while somebody is reading a few pixels above the bottom. */
+		var atBottom = host.scrollHeight - host.clientHeight - host.scrollTop <= 20, changed = false;
 		var lines = host.querySelectorAll('.logline'), prev = null, live = on(), wrap = wrapOn();
 		for (var i = 0; i < lines.length; i++) {
 			var el = lines[i];
@@ -1902,13 +1910,15 @@ function glExtraTag() {
 				// prefix width in characters: `08:22:47 <nick> ` and `08:22:47 * nick ` are the same length
 				var n = tsLen + nick.length + 4;
 				var pad = n + 'ch', ind = same ? '0' : '-' + n + 'ch';
-				if (el.style.paddingLeft !== pad) el.style.paddingLeft = pad;
-				if (el.style.textIndent !== ind) el.style.textIndent = ind;
+				if (el.style.paddingLeft !== pad) { el.style.paddingLeft = pad; changed = true; }
+				if (el.style.textIndent !== ind) { el.style.textIndent = ind; changed = true; }
 			} else if (el.style.paddingLeft) {
 				el.style.paddingLeft = '';
 				el.style.textIndent = '';
+				changed = true;
 			}
 		}
+		if (changed && atBottom) host.scrollTop = host.scrollHeight;
 	}
 	setInterval(function () { if (on() || wrapOn()) pass(); }, 700);
 	document.addEventListener('gamja-refresh', pass);
