@@ -1,0 +1,19 @@
+fix: the "Open buffer" dialog cannot be dismissed
+
+Unlike every other dialog this one is rendered without `onDismiss`, so the close
+button, Esc and clicking outside all call `undefined` and throw: the dialog stays on
+screen with no way out.
+
+diff --git a/components/app.js b/components/app.js
+index 6b63cdd..2acb188 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -2325,7 +2325,7 @@ export default class App extends Component {
+ 				bouncerNetwork = this.state.bouncerNetworks.get(server.bouncerNetID);
+ 			}
+ 			dialog = html`
+-				<${Dialog} title="Open buffer">
++				<${Dialog} title="Open buffer" onDismiss=${this.dismissDialog}>
+ 					<${ConfirmOpenBuffer}
+ 						name=${dialogData.name}
+ 						client=${client}

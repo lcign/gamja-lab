@@ -1,0 +1,24 @@
+fix: a slow JOIN drags you out of the buffer you moved to
+
+`switchToChannel` is recorded when the join is requested and acted on when the
+server's JOIN arrives, with no timeout and no cancellation — so a slow join, or an
+autojoin on reconnect, can pull you away from wherever you went in the meantime.
+
+Clearing it in `switchBuffer` covers every manual switch (list, keyboard, switcher) in
+one place, and the intended jump still works: the JOIN handler tests the field before
+using it.
+
+diff --git a/components/app.js b/components/app.js
+index 2acb188..cd40926 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -573,6 +573,9 @@ export default class App extends Component {
+ 	}
+ 
+ 	switchBuffer(id) {
++		// You moved on your own: drop any switch still waiting for a JOIN.
++		this.switchToChannel = null;
++
+ 		let buf, isInitialSwitch;
+ 		this.setState((state) => {
+ 			buf = State.getBuffer(state, id);

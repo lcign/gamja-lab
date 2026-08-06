@@ -2315,6 +2315,12 @@ function glExtraTag() {
 		chk.type = 'checkbox'; chk.checked = on(); chk.style.flex = 'none';
 		chk.addEventListener('change', function () {
 			localStorage.setItem(KEY, chk.checked ? '1' : '0');
+			if (chk.checked) {                                     // dot and count are exclusive
+				localStorage.setItem('gamja_unread_num', '0');
+				document.documentElement.removeAttribute('data-unread-num');
+				var o = document.querySelector('.un-row input[type=checkbox]');
+				if (o) o.checked = false;
+			}
 			apply();
 		});
 		row.appendChild(lab); row.appendChild(chk);
@@ -2342,5 +2348,72 @@ function glExtraTag() {
 		if (chk) chk.checked = true;
 		var schk = document.querySelector('.uds-row input[type=checkbox]');
 		if (schk) schk.checked = false;
+	});
+})();
+
+/* ===================== unread count =====================
+   ⚠️ gamja counts nothing: `unread` is a three-level enum, so the tally lives here and the
+   bundle hooks only bump/clear it. Keyed by buffer id, so same name on two networks = two counts.
+   Not persisted: after a reload the count is gone and the row shows `1+` (CSS). */
+(function () {
+	var KEY = 'gamja_unread_num';
+	var n = new Map();                                             // buffer id -> messages unread
+	var patched = false;                                           // set by the hook, see below
+	function on() { return localStorage.getItem(KEY) === '1'; }    // off unless asked
+	function apply() {
+		var r = document.documentElement;
+		if (on()) r.setAttribute('data-unread-num', ''); else r.removeAttribute('data-unread-num');
+		if (on()) r.removeAttribute('data-unread-dot');               // exclusive with the dot
+	}
+	apply();
+
+	window.gamjaUnreadBump = function (buf) { if (buf) n.set(buf.id, (n.get(buf.id) || 0) + 1); };
+	window.gamjaUnreadClear = function (buf) { if (buf) n.delete(buf.id); };
+	window.gamjaUnreadClearAll = function () { n.clear(); };
+	/* null, not 0: preact drops the attribute, and the CSS goes back to the dot. */
+	window.gamjaUnreadOf = function (buf) {
+		patched = true;                          // only the patched build ever calls this
+		var c = buf && n.get(buf.id);
+		return c ? (c > 99 ? '99+' : String(c)) : null;
+	};
+
+	document.addEventListener('gamja-extra-panel', function (ev) {
+		var panel = ev.detail && ev.detail.panel;
+		if (!panel || panel.querySelector('.un-row')) return;
+		var row = document.createElement('div');
+		row.className = 'tp-zoom un-row';
+		var lab = document.createElement('span');
+		lab.textContent = 'Unread count';
+		var chk = document.createElement('input');
+		chk.type = 'checkbox'; chk.checked = on(); chk.style.flex = 'none';
+		chk.title = 'A number instead of the dot. Counting starts now: rows already unread keep ' +
+			'the dot until their next message.';
+		chk.addEventListener('change', function () {
+			localStorage.setItem(KEY, chk.checked ? '1' : '0');
+			if (chk.checked) {                                     // count and dot are exclusive
+				localStorage.setItem('gamja_unread_dot', '0');
+				document.documentElement.removeAttribute('data-unread-dot');
+				var o = document.querySelector('.ud-row input[type=checkbox]');
+				if (o) o.checked = false;
+			}
+			apply();
+		});
+		row.appendChild(lab); row.appendChild(chk);
+		panel.appendChild(row);
+
+		if (!patched) {                          // plain build: say so instead of showing nothing
+			var warn = document.createElement('div');
+			warn.className = 'tp-warn hot';
+			warn.textContent = '⚠ Needs gamja built with patches/0001 — this build does not report ' +
+				'unread counts, so the switch above has no effect. /list needs patches/0002 the same way.';
+			panel.appendChild(warn);
+			chk.disabled = true;
+		}
+	});
+
+	document.addEventListener('gamja-extra-reset', function () {
+		localStorage.removeItem(KEY); apply();
+		var chk = document.querySelector('.un-row input[type=checkbox]');
+		if (chk) chk.checked = false;
 	});
 })();

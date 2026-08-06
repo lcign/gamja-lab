@@ -2,7 +2,7 @@
 
 Customizations for [gamja](https://codeberg.org/emersion/gamja), the web IRC client, as used in front
 of a [soju](https://codeberg.org/emersion/soju) bouncer. `custom.css` + `custom.js` sit beside gamja's
-bundle and never touch it, so they survive a rebuild — the one exception is the `/list` hook below.
+bundle and never touch it, so they survive a rebuild — two features also need the patches below.
 Desktop only.
 
 **Tested against gamja `master` at [`cdf94d6`](https://codeberg.org/emersion/gamja/commit/cdf94d6)
@@ -20,7 +20,8 @@ and 54 commits behind. These files hook gamja's DOM and CSS variables, not a sta
   it sets, and the options below. *Reset* restores every default and leaves pinned channels alone.
 - **Channel list**: 📌 pinning, marks for the bouncer and the networks, private messages in their own
   block, optional grouping of names shared across networks as `#channel@network`, unread dot on either
-  side, long nicks shortened.
+  side or an unread **count** as a badge (needs the patch below; `?` where the tally is unknown),
+  long nicks shortened.
 - **Runs of messages**: repeated nick and timestamp dropped, wrapped lines indented into the text column.
 - **⟳ reload** in the buffer header, for a channel that renders empty after joining.
 - **`/paste`**: one message per line, or uploaded to dpaste.com and sent as a link — ⚠️ that leaves the
@@ -60,37 +61,40 @@ Why any of it is done the way it is: [notes.md](notes.md). The code is commented
 3. Copy `config.json.example` to `config.json` and point it at your own bouncer's WebSocket endpoint.
    ⚠️ It **must be on the same origin** as the page, or soju refuses the connection (*"request Origin
    … is not authorized for Host …"*). Nick, autojoin and networks are configured in soju, not here.
-4. For the `/list` dialog, apply the bundle hook below.
+4. For the `/list` dialog and the unread count, apply the patches in [`patches/`](patches).
 
-## Bundle hook for `/list`
+## Patches for gamja itself
 
-gamja does not surface `LIST` numerics, so the dialog is fed by an event. In `build.*.js`, inside
-`handleMessage`, right after the message is parsed (that variable is `s` in this build):
+Two features need gamja to report something it keeps to itself, and three are plain gamja defects.
+All five live in [`patches/`](patches), against gamja **master** (`cdf94d6`) — source, not edits to a
+built file. Applied and verified in this order on a clean clone (`eslint` clean, `parcel` builds):
 
-```js
-if ("322" === s.command) {
-    (window.__gl = window.__gl || []).push({
-        c: s.params[1],
-        u: parseInt(s.params[2], 10) || 0,
-        t: s.params[3] || ""
-    });
-    return;
-} else if ("321" === s.command) {
-    window.__gl = [];
-    return;
-} else if ("323" === s.command) {
-    try {
-        window.dispatchEvent(new CustomEvent("gamja-list", { detail: window.__gl || [] }));
-    } catch (_e) {}
-    return;
-}
+```sh
+git clone https://codeberg.org/emersion/gamja.git && cd gamja
+for p in ../gamja-lab/patches/*.patch; do git apply "$p"; done
+npm install && npm run build          # dist/ is what you deploy
 ```
 
-`321` opens the list, `322` is one row, `323` ends it; returning early keeps them out of the buffer.
+| Patch | What it does | Needed by |
+|---|---|---|
+| `0001` | `window.gamjaUnread{Bump,Clear,ClearAll,Of}` on the unread transitions; the row reads its own count into `data-unread` while it renders | Unread count |
+| `0002` | a `gamja-list` event with the LIST replies, numerics kept out of the buffer | `/list` dialog |
+| `0003` | the *Open buffer* dialog gets `onDismiss`, so ✕, Esc and click-outside work | — |
+| `0004` | a pending channel switch is cancelled when you switch yourself, so a slow JOIN cannot drag you away | — |
+| `0005` | history is requested for a buffer that renders empty | ⟳ button rarely needed |
 
-⚠️ Names are **minified and change on every build** — read them off your own bundle. Rebuilding gamja
-**overwrites the hook**. And if the bundle is served with a long `max-age`, a patched file needs a
-**new name** with `index.html` pointed at it, or the patch stays invisible.
+The first two are hooks, the others are fixes worth carrying regardless. Everything else here is
+plain page files: gamja runs unpatched, it just keeps the defects and those two features stay off —
+the *Extra* panel says so, greying the switch out when the build cannot report counts.
+
+💡 The hooks are deliberately thin: gamja keeps the state it already kept, the tally lives on the
+page, and nothing polls or observes the DOM.
+
+Without a build step the same edits can be made by hand inside `build.*.js` — see
+[`bundle-fixes.md`](bundle-fixes.md), and mind the caveats:
+minified names change on every build, a rebuild overwrites the edit, and a bundle served with a long
+`max-age` needs a **new filename** with `index.html` pointed at it. ⚠️ Never reuse a filename that
+has already been served: browsers keep the old file and you end up debugging code that is not there.
 
 ⚠️ Do **not** wrap `window.WebSocket` to intercept `/list`. That was the first attempt, together with a
 document-wide observer, and it left gamja sluggish with messages flickering in and out.

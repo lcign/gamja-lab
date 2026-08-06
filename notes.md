@@ -46,8 +46,11 @@ nothing.
 ## Limits worth knowing
 
 - Settings live in `localStorage`, so they are **per-browser** and do not travel with the files.
-- The unread dot signals presence, never a count: gamja's `unread` is a three-level enum, so no number
-  exists to show.
+- gamja's `unread` is a three-level enum: no count exists. The optional number is counted in
+  `custom.js` off the hooks in `patches/`, keyed by buffer id, and is **lost on reload**. A row gamja calls unread
+  with no tally behind it shows a **`?`**, not a number: its level can be stale — seen on a channel whose
+  only traffic since the read marker was JOIN/PART, and gamja skips its own recount when soju's marker
+  matches the one it already stored.
 - Search covers the lines **currently rendered**. Reaching real history means querying the bouncer,
   which browser-side files cannot do.
 - Sidebar hrefs do not carry the network: it is derived from DOM order, by walking up to the network

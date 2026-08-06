@@ -1,0 +1,65 @@
+sidebar: report unread transitions to the page
+
+`unread` is a three-level enum, so a script running on the page cannot show a count.
+These hooks report the transitions and leave the tally to the page; the buffer row asks
+for its own number while it renders, so nothing has to observe or poll the DOM.
+
+The `msgUnread !== Unread.NONE` guard is what keeps joins, parts and topic changes out
+of the count.
+
+diff --git a/components/app.js b/components/app.js
+index fae1f4d..28e7c61 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -626,6 +626,9 @@ export default class App extends Component {
+ 			if (!buf) {
+ 				return;
+ 			}
++			if (window.gamjaUnreadClear) {
++				window.gamjaUnreadClear(buf);
++			}
+ 			return State.updateBuffer(state, buf.id, { unread: Unread.NONE });
+ 		}, () => {
+ 			if (!buf) {
+@@ -855,6 +858,9 @@ export default class App extends Component {
+ 			let receipts = { [ReceiptType.DELIVERED]: receiptFromMessage(msg) };
+ 
+ 			if (this.state.activeBuffer !== buf.id || !document.hasFocus()) {
++				if (msgUnread !== Unread.NONE && window.gamjaUnreadBump) {
++					window.gamjaUnreadBump(buf);
++				}
+ 				unread = Unread.union(unread, msgUnread);
+ 			} else {
+ 				receipts[ReceiptType.READ] = receiptFromMessage(msg);
+diff --git a/components/buffer-list.js b/components/buffer-list.js
+index 7dba748..a6e40ab 100644
+--- a/components/buffer-list.js
++++ b/components/buffer-list.js
+@@ -47,7 +47,12 @@ function BufferItem(props) {
+ 	}
+ 
+ 	return html`
+-		<li class="${classes.join(" ")}" role="tab" aria-selected="${props.active}">
++		<li
++			class="${classes.join(" ")}"
++			role="tab"
++			aria-selected="${props.active}"
++			data-unread=${window.gamjaUnreadOf ? window.gamjaUnreadOf(props.buffer) : null}
++		>
+ 			<a
+ 				href=${getBufferURL(props.buffer)}
+ 				title=${title}
+diff --git a/keybindings.js b/keybindings.js
+index 708233f..7d289c5 100644
+--- a/keybindings.js
++++ b/keybindings.js
+@@ -17,6 +17,9 @@ export const keybindings = [
+ 		description: "Mark all messages as read",
+ 		execute: (app) => {
+ 			app.setState((state) => {
++				if (window.gamjaUnreadClearAll) {
++					window.gamjaUnreadClearAll();
++				}
+ 				let buffers = new Map();
+ 				state.buffers.forEach((buf) => {
+ 					buffers.set(buf.id, {

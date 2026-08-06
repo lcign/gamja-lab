@@ -1,0 +1,19 @@
+fix: history is never loaded for an already-read buffer
+
+`restoreScrollPosition` returns as soon as the buffer has no rendered child, which is
+exactly the case where history has to be requested: `onScrollTop` is never reached and
+the buffer stays empty until you switch away and back.
+
+diff --git a/components/scroll-manager.js b/components/scroll-manager.js
+index 13ee0e8..35ebd84 100644
+--- a/components/scroll-manager.js
++++ b/components/scroll-manager.js
+@@ -40,6 +40,8 @@ export default class ScrollManager extends Component {
+ 	restoreScrollPosition() {
+ 		let target = this.props.target.current;
+ 		if (!target.firstChild) {
++			// Nothing rendered yet: that is precisely when history is needed.
++			this.props.onScrollTop();
+ 			return;
+ 		}
+ 

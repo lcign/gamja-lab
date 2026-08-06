@@ -1,9 +1,13 @@
 # Optional bundle fixes
 
+> Building gamja from source? Use [`patches/`](patches) instead — same three fixes, plus the two
+> hooks, against the real files.
+
 Fixes for gamja defects, unrelated to the customizations here — gamja works without them, it just keeps
-the bugs. Each is a hand edit inside `build.*.js`, so the caveats of the
-[`/list` hook](README.md#bundle-hook-for-list) apply: minified names change on every build, a rebuild
-overwrites everything, and a cached bundle needs the patched file **renamed**.
+the bugs. Each is a hand edit inside `build.*.js`: minified names change on every build, a rebuild
+overwrites everything, and a cached bundle needs the patched file **renamed** (⚠️ never a name already
+served). Building from source instead? Then these belong next to the
+[patches](README.md#patches-for-gamja-itself).
 
 - **The "Open buffer" dialog cannot be dismissed** (✕, Esc and click-outside do nothing): unlike every
   other dialog it is rendered without an `onDismiss` prop, so `dismiss()` calls `undefined` and throws.

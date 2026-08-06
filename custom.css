@@ -77,7 +77,11 @@ html{font-size:calc(16px * var(--fs,1))}
 /* ⚠️ `min-height:0` is what makes the scrolling work: a flex item defaults to `min-height:auto`, so it
    refuses to shrink below its content and the overflow never happens — the classic flexbox trap. */
 #themePanel .tp-pane{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-content:start;
-	flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
+	flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin;
+	/* ⚠️ 2px were not enough: a classic (always-visible) scrollbar sat on top of the controls at the
+	   right edge and stole the clicks. The gutter is reserved even when it is not scrolling, so the
+	   rows never move; harmless with overlay scrollbars. */
+	scrollbar-gutter:stable;padding-right:10px}
 /* ⚠️ The width follows the TAB, not the window: at 900px the Options rows (label on the left, control
    on the right) were stretched across half a screen with nothing in between. The wide panel and the
    four colour columns only apply while Colors is showing — custom.js puts `wide` on the panel. */
@@ -577,3 +581,46 @@ kbd{
    It has to be excluded explicitly, like nicknames — and while at it, it gets a variable of its
    own, falling back to `--gray`. */
 #buffer a.timestamp{color:var(--timestamp-color, var(--gray))}
+
+/* ===== unread count (Extra → "Unread count") =====
+   A badge on the same pseudo-element as the dot, in the colours of the selected row, so the two
+   options are interchangeable and nothing shifts. ⚠️ The geometry is repeated, not inherited: the
+   dot rules are gated on `[data-unread-dot]`, which number mode does not set.
+   ⚠️ Same specificity as those rules — it wins only by coming later. Do not move this block up. */
+/* the list is the scroller: reserve the gutter, or the badge ends up under the scrollbar */
+#buffer-list ul{scrollbar-gutter:stable}
+:root[data-unread-num] #buffer-list li{padding-right:3.4ch}
+:root[data-unread-num] #buffer-list li.unread-message > a::after,
+:root[data-unread-num] #buffer-list li.unread-highlight > a::after{content:none}
+/* ⚠️ …but on grouped rows `a::after` holds the @network label: restate it, or grouping vanishes on
+   exactly the channels that have activity. */
+:root[data-unread-num] #buffer-list li[data-net].unread-message > a::after,
+:root[data-unread-num] #buffer-list li[data-net].unread-highlight > a::after{
+	content:attr(data-net);float:none;margin:0;font-size:1em}
+/* badge with the tally, `?` when the tally is unknown — gamja keeps unread as a level, so it can
+   claim unread with no count behind it (its own stale state, or messages fetched later). ⚠️ Do not
+   print a number there: gamja's level survives even when nothing was actually said. */
+:root[data-unread-num] #buffer-list li.unread-message::after,
+:root[data-unread-num] #buffer-list li.unread-highlight::after{content:"?";
+	position:absolute;right:5px;top:50%;transform:translateY(-50%);
+	min-width:1.5em;padding:.1em .4em;border-radius:1em;box-sizing:border-box;
+	background-color:var(--bl-active-bg,#fff);color:var(--bl-active-color,var(--sidebar-background));
+	text-align:center;line-height:1.2;font-size:.72em;font-weight:600;
+	font-variant-numeric:tabular-nums}
+:root[data-unread-num] #buffer-list li[data-unread]::after{content:attr(data-unread)}
+/* nothing on the row you are reading */
+:root[data-unread-num] #buffer-list li.active::after{content:none}
+/* rows with a caption are taller: centre on the channel's own line */
+:root[data-unread-num] #buffer-list li[data-shared-head]::after,
+:root[data-unread-num] #buffer-list li[data-pm-head]::after{
+	top:auto;bottom:calc((1.3em + 4px) / 2);transform:translateY(50%)}
+/* follows "Unread dot on the left" — the strip swap is gated on the dot attribute, which number
+   mode does not set, so it has to be repeated here */
+:root[data-unread-num][data-dot-left] #buffer-list li{padding-right:0;padding-left:3.4ch}
+:root[data-unread-num][data-dot-left] #buffer-list li > a{padding-left:3px}
+:root[data-unread-num][data-dot-left] #buffer-list li.unread-message::after,
+:root[data-unread-num][data-dot-left] #buffer-list li.unread-highlight::after{
+	right:auto;left:2px}
+:root[data-unread-num][data-dot-left] #buffer-list li[data-shared-head]::before,
+:root[data-unread-num][data-dot-left] #buffer-list li[data-pm-head]::before{left:3.4ch;
+	padding-left:0}

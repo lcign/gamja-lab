@@ -1,0 +1,48 @@
+emit a `gamja-list` event for LIST replies
+
+LIST output is not surfaced anywhere, so a script on the page has no way to render a
+channel list. Collect the replies and emit them at RPL_LISTEND; returning early keeps
+the numerics out of the buffer.
+
+diff --git a/components/app.js b/components/app.js
+index 28e7c61..6b63cdd 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -1182,6 +1182,23 @@ export default class App extends Component {
+ 
+ 		let target, channel;
+ 		switch (msg.command) {
++		case irc.RPL_LISTSTART:
++			this.listReply = [];
++			return;
++		case irc.RPL_LIST:
++			this.listReply = this.listReply || [];
++			this.listReply.push({
++				c: msg.params[1],
++				u: parseInt(msg.params[2], 10) || 0,
++				t: msg.params[3] || "",
++			});
++			return;
++		case irc.RPL_LISTEND:
++			window.dispatchEvent(new CustomEvent("gamja-list", {
++				detail: this.listReply || [],
++			}));
++			this.listReply = null;
++			return;
+ 		case irc.RPL_WELCOME:
+ 			this.fetchBacklog(serverID);
+ 			break;
+diff --git a/lib/irc.js b/lib/irc.js
+index 6711e9f..2ece536 100644
+--- a/lib/irc.js
++++ b/lib/irc.js
+@@ -21,6 +21,9 @@ export const RPL_NOTOPIC = "331";
+ export const RPL_TOPIC = "332";
+ export const RPL_TOPICWHOTIME = "333";
+ export const RPL_INVITING = "341";
++export const RPL_LISTSTART = "321";
++export const RPL_LIST = "322";
++export const RPL_LISTEND = "323";
+ export const RPL_INVITELIST = "346";
+ export const RPL_ENDOFINVITELIST = "347";
+ export const RPL_EXCEPTLIST = "348";
