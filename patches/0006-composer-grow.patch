@@ -1,0 +1,226 @@
+composer: grow to a second line instead of scrolling sideways
+
+A long message scrolls out of sight in a single-line input, so you cannot re-read
+what you wrote before sending it. A textarea grows with the text instead, up to a
+third of the window, and drops back to one row after sending. Enter sends,
+Shift+Enter breaks the line.
+
+⚠️ Growing takes height away from the buffer, which cuts the last message off.
+ScrollManager's ResizeObserver does pin it back, but only if `stickToBottom`, which
+a debounced scroll handler updates 100ms late — so while you type the bottom line
+keeps disappearing and settles only once you stop. Hence `keepAtBottom()`: the
+composer asks before changing height and pins right after, in the same frame.
+
+Tab completion is unchanged, except that a word now ends at any whitespace: with
+newlines in play, ` ` alone left the line break inside the word.
+
+diff --git a/components/app.js b/components/app.js
+index fae1f4d..5a6e6ae 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -215,6 +215,7 @@ export default class App extends Component {
+ 	endOfHistory = new Map();
+ 	receipts = new Map();
+ 	buffer = createRef();
++	scrollManager = createRef();
+ 	composer = createRef();
+ 	switchToChannel = null;
+ 	/**
+@@ -245,6 +246,7 @@ export default class App extends Component {
+ 		this.handleNickClick = this.handleNickClick.bind(this);
+ 		this.autocomplete = this.autocomplete.bind(this);
+ 		this.handleBufferScrollTop = this.handleBufferScrollTop.bind(this);
++		this.handleComposerResize = this.handleComposerResize.bind(this);
+ 		this.dismissDialog = this.dismissDialog.bind(this);
+ 		this.handleAddNetworkClick = this.handleAddNetworkClick.bind(this);
+ 		this.handleNetworkSubmit = this.handleNetworkSubmit.bind(this);
+@@ -1839,6 +1841,15 @@ export default class App extends Component {
+ 		this.openDialog("help");
+ 	}
+ 
++	// The composer is about to change height: returns the function that pins the buffer
++	// back to the bottom, to be called once the new height is in place.
++	handleComposerResize() {
++		if (!this.scrollManager.current) {
++			return null;
++		}
++		return this.scrollManager.current.keepAtBottom();
++	}
++
+ 	async handleBufferScrollTop() {
+ 		let buf = this.state.buffers.get(this.state.activeBuffer);
+ 		if (!buf || buf.type === BufferType.SERVER) {
+@@ -2429,6 +2440,7 @@ export default class App extends Component {
+ 			</section>
+ 			${bufferHeader}
+ 			<${ScrollManager}
++				ref=${this.scrollManager}
+ 				target=${this.buffer}
+ 				stickTo=".logline"
+ 				scrollKey=${this.state.activeBuffer}
+@@ -2449,6 +2461,7 @@ export default class App extends Component {
+ 			</>
+ 			${memberList}
+ 			<${Composer}
++					onResize=${this.handleComposerResize}
+ 				ref=${this.composer}
+ 				client=${activeClient}
+ 				readOnly=${composerReadOnly}
+diff --git a/components/composer.js b/components/composer.js
+index 7f1f22f..aeaa6a3 100644
+--- a/components/composer.js
++++ b/components/composer.js
+@@ -63,8 +63,26 @@ export default class Composer extends Component {
+ 		this.handleFileInputChange = this.handleFileInputChange.bind(this);
+ 	}
+ 
++	// One row while it fits, more as you type: a textarea does not grow on its own.
++	// ⚠️ Growing steals height from the buffer, so ask it to hold the bottom BEFORE the
++	// height changes and pin right after — in the same frame. Waiting for the
++	// ResizeObserver means the last message flickers away at every keystroke.
++	autoGrow() {
++		let input = this.textInput.current;
++		if (!input) {
++			return;
++		}
++		let pin = this.props.onResize ? this.props.onResize() : null;
++		input.style.height = "auto";
++		input.style.height = input.scrollHeight + "px";
++		if (pin) {
++			pin();
++		}
++	}
++
+ 	handleInput(event) {
+ 		this.setState({ [event.target.name]: event.target.value });
++		this.autoGrow();
+ 
+ 		if (this.props.readOnly && event.target.name === "text" && !event.target.value) {
+ 			event.target.blur();
+@@ -74,12 +92,20 @@ export default class Composer extends Component {
+ 	handleSubmit(event) {
+ 		event.preventDefault();
+ 		this.props.onSubmit(this.state.text);
+-		this.setState({ text: "" });
++		this.setState({ text: "" }, () => this.autoGrow());   // back to one row
+ 	}
+ 
+ 	handleInputKeyDown(event) {
+ 		let input = event.target;
+ 
++		// In a textarea Enter would insert a newline: Enter sends, Shift+Enter breaks
++		// the line. isComposing means an IME is mid-word.
++		if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
++			event.preventDefault();
++			input.form.requestSubmit();
++			return;
++		}
++
+ 		if (!this.props.autocomplete || event.key !== "Tab") {
+ 			return;
+ 		}
+@@ -100,7 +126,7 @@ export default class Composer extends Component {
+ 
+ 			let wordStart;
+ 			for (wordStart = carretPos - 1; wordStart >= 0; wordStart--) {
+-				if (text[wordStart] === " ") {
++				if (/\s/.test(text[wordStart])) {
+ 					break;
+ 				}
+ 			}
+@@ -108,7 +134,7 @@ export default class Composer extends Component {
+ 
+ 			let wordEnd;
+ 			for (wordEnd = carretPos; wordEnd < text.length; wordEnd++) {
+-				if (text[wordEnd] === " ") {
++				if (/\s/.test(text[wordEnd])) {
+ 					break;
+ 				}
+ 			}
+@@ -388,7 +414,7 @@ export default class Composer extends Component {
+ 
+ 		this.textInput.current.focus();
+ 		this.textInput.current.setRangeText(text, undefined, undefined, "end");
+-		this.setState({ text: this.textInput.current.value });
++		this.setState({ text: this.textInput.current.value }, () => this.autoGrow());
+ 	}
+ 
+ 	componentDidMount() {
+@@ -471,11 +497,11 @@ export default class Composer extends Component {
+ 				onDragOver=${this.handleDragOver}
+ 				onDrop=${this.handleDrop}
+ 			>
+-				<input
+-					type="text"
++				<textarea
+ 					name="text"
+ 					ref=${this.textInput}
+ 					value=${this.state.text}
++					rows="1"
+ 					autocomplete="off"
+ 					placeholder=${placeholder}
+ 					enterkeyhint="send"
+diff --git a/components/scroll-manager.js b/components/scroll-manager.js
+index 13ee0e8..dda88df 100644
+--- a/components/scroll-manager.js
++++ b/components/scroll-manager.js
+@@ -68,9 +68,29 @@ export default class ScrollManager extends Component {
+ 		this.stickToBottom = this.isAtBottom();
+ 	}
+ 
++	scrollToBottom() {
++		let target = this.props.target.current;
++		if (target && target.firstChild) {
++			target.firstChild.scrollIntoView({ block: "end" });
++		}
++		this.stickToBottom = true;
++	}
++
++	// For whoever takes space away from us (the composer growing). Decide while the old
++	// layout is still there, pin once the new one is in: `stickToBottom` alone is not
++	// enough, a debounced scroll handler updates it and it lags by 100ms.
++	keepAtBottom() {
++		let stick = this.stickToBottom || this.isAtBottom();
++		return () => {
++			if (stick) {
++				this.scrollToBottom();
++			}
++		};
++	}
++
+ 	handleResize() {
+-		if (this.stickToBottom && this.props.target.current.firstChild) {
+-			this.props.target.current.firstChild.scrollIntoView({ block: "end" });
++		if (this.stickToBottom) {
++			this.scrollToBottom();
+ 		}
+ 	}
+ 
+diff --git a/style.css b/style.css
+index 57e0248..671145c 100644
+--- a/style.css
++++ b/style.css
+@@ -335,13 +335,20 @@ button.danger:hover {
+ 	from { transform: rotate(0deg); }
+ 	to { transform: rotate(360deg); }
+ }
+-#composer input[type="text"] {
++#composer textarea {
+ 	flex: 1;
+-	height: 35px;
++	min-height: 35px;
++	/* stops at a third of the window: past that it scrolls and the buffer keeps its room */
++	max-height: 33vh;
+ 	box-sizing: border-box;
+ 	padding: 10px;
++	resize: none;
++	overflow-y: auto;
++	/* a textarea inherits neither font nor line height */
++	font: inherit;
++	line-height: 1.15;
+ }
+-#composer input[type="text"], #composer input[type="text"]:focus {
++#composer textarea, #composer textarea:focus {
+ 	border: none;
+ 	background: none;
+ 	outline: none;

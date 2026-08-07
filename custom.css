@@ -41,8 +41,8 @@ body, body *, input, button, textarea, select{
 html{font-size:calc(16px * var(--fs,1))}
 
 /* composer box: light text */
-#composer input[type=text]{color:var(--main-color) !important}
-#composer input[type=text]::placeholder{color:var(--gray) !important}
+#composer textarea,#composer input[type=text]{color:var(--main-color) !important}
+#composer textarea::placeholder,#composer input[type=text]::placeholder{color:var(--gray) !important}
 
 /* left channel list: the MENTION entry (unread-highlight) is a hardcoded blue in gamja; here it is
    wired to the panel's Highlight variables (text + background).
@@ -347,7 +347,16 @@ html{font-size:calc(16px * var(--fs,1))}
    link (where gamja floats it) onto `li::after`, pinned to that strip; the row colour, set below,
    is what makes it follow Accent and Mention. The selection background moves onto the <li> too,
    otherwise it would stop before the strip. */
-#buffer-list li{position:relative;padding-right:2.2ch}
+/* ⚠️ Declared with @property on purpose: the mark that reads --cap has a font-size of its own
+   (.72em for the badge, 1.15em for the dot), and a plain custom property is substituted as text —
+   the `em` would resolve against THAT font and the caption would measure ~72% of its real height.
+   As a <length> it is computed on the row and inherited already resolved. */
+@property --cap{syntax:"<length>";inherits:true;initial-value:0px}
+#buffer-list li{position:relative;padding-right:2.2ch;--cap:0px}
+/* the caption lives in this row's padding-top: the mark centres on what is left */
+#buffer-list li[data-shared-head],
+#buffer-list li[data-pm-head],
+#buffer-list li[data-unread-head]{--cap:calc(1.3em + 4px)}
 /* full width, dot strip included */
 #buffer-list li.active{background-color:var(--bl-active-bg,#fff)}
 #buffer-list li.active > a{background-color:transparent}
@@ -355,15 +364,11 @@ html{font-size:calc(16px * var(--fs,1))}
 :root[data-unread-dot] #buffer-list li.unread-highlight > a::after{content:none}
 :root[data-unread-dot] #buffer-list li.unread-message::after,
 :root[data-unread-dot] #buffer-list li.unread-highlight::after{content:"•";
-	position:absolute;right:0;top:50%;transform:translateY(-50%);width:2.2ch;text-align:center;
+	position:absolute;right:0;top:calc(var(--cap) + (100% - var(--cap)) / 2);
+	transform:translateY(-50%);width:2.2ch;text-align:center;
 	line-height:1;font-size:1.15em}
 /* nothing on the row you are reading: it says nothing you cannot see */
 :root[data-unread-dot] #buffer-list li.active::after{content:none}
-/* ⚠️ On the rows that carry a caption the <li> is taller by the caption's height, so `top:50%`
-   centred the dot between caption and channel. These centre it on the row's own line instead. */
-:root[data-unread-dot] #buffer-list li[data-shared-head]::after,
-:root[data-unread-dot] #buffer-list li[data-pm-head]::after{
-	top:auto;bottom:calc((1.3em + 4px) / 2);transform:translateY(50%)}
 
 /* ── dot in FRONT of the name (Extra → "Unread dot on the left") ──
    The reserved strip simply swaps side, so the geometry stays identical and rows keep lining up
@@ -377,7 +382,8 @@ html{font-size:calc(16px * var(--fs,1))}
 :root[data-unread-dot][data-dot-left] #buffer-list li.unread-highlight::after{
 	right:auto;left:0;width:1.6ch}
 :root[data-unread-dot][data-dot-left] #buffer-list li[data-shared-head]::before,
-:root[data-unread-dot][data-dot-left] #buffer-list li[data-pm-head]::before{left:1.6ch;
+:root[data-unread-dot][data-dot-left] #buffer-list li[data-pm-head]::before,
+:root[data-unread-dot][data-dot-left] #buffer-list li[data-unread-head]::before{left:1.6ch;
 	padding-left:0}
 #buffer-list li.unread-message{color:var(--activity-color,var(--green))}
 #buffer-list li.unread-highlight{color:var(--highlight-color)}
@@ -414,7 +420,8 @@ html{font-size:calc(16px * var(--fs,1))}
 /* the caption takes exactly one row's height — same line-height and same padding as a channel row —
    so the rhythm of the list is untouched: no extra margins above or below. */
 #buffer-list li[data-shared-head],
-#buffer-list li[data-pm-head]{position:relative;padding-top:calc(1.3em + 4px)}
+#buffer-list li[data-pm-head],
+#buffer-list li[data-unread-head]{position:relative;padding-top:calc(1.3em + 4px)}
 /* the caption reads as a network row of its own: same size, same colour, same padding as one, with
    its own mark in front (swappable through --shared-icon) instead of the networks' ⚯. */
 /* ⚠️ The caption has a background of its own on purpose: it lives in the padding of the first
@@ -422,12 +429,14 @@ html{font-size:calc(16px * var(--fs,1))}
    the caption as well. Being positioned, the caption draws on top — an opaque background is all it
    takes, and the row keeps its full-width highlight. */
 #buffer-list li[data-shared-head]::before,
-#buffer-list li[data-pm-head]::before{
+#buffer-list li[data-pm-head]::before,
+#buffer-list li[data-unread-head]::before{
 	position:absolute;top:0;left:0;right:0;padding:2px 10px;line-height:1.3;white-space:nowrap;
 	color:var(--bl-color,var(--main-color));
 	background-color:var(--bl-background,var(--sidebar-background))}
 #buffer-list li[data-shared-head]::before{content:var(--shared-icon,"⧉") " shared names"}
 #buffer-list li[data-pm-head]::before{content:var(--pm-icon,"✉") " private messages"}
+#buffer-list li[data-unread-head]::before{content:var(--unread-icon,"◆") " unread messages"}
 
 /* channel list: flex column so entries can be reordered via `order` (assigned by custom.js).
    The width is pinned to the longest row: gamja sizes the column as `max-content` but leaves the
@@ -589,7 +598,7 @@ kbd{
    ⚠️ Same specificity as those rules — it wins only by coming later. Do not move this block up. */
 /* the list is the scroller: reserve the gutter, or the badge ends up under the scrollbar */
 #buffer-list ul{scrollbar-gutter:stable}
-:root[data-unread-num] #buffer-list li{padding-right:3.4ch}
+:root[data-unread-num] #buffer-list li{padding-right:4.8ch}
 :root[data-unread-num] #buffer-list li.unread-message > a::after,
 :root[data-unread-num] #buffer-list li.unread-highlight > a::after{content:none}
 /* ⚠️ …but on grouped rows `a::after` holds the @network label: restate it, or grouping vanishes on
@@ -602,25 +611,27 @@ kbd{
    print a number there: gamja's level survives even when nothing was actually said. */
 :root[data-unread-num] #buffer-list li.unread-message::after,
 :root[data-unread-num] #buffer-list li.unread-highlight::after{content:"?";
-	position:absolute;right:5px;top:50%;transform:translateY(-50%);
-	min-width:1.5em;padding:.1em .4em;border-radius:1em;box-sizing:border-box;
+	position:absolute;right:5px;top:calc(var(--cap) + (100% - var(--cap)) / 2);
+	transform:translateY(-50%);
+	/* centrato per costruzione: con interlinea + imbottitura la cifra segue la linea di
+	   base del font e resta alta di un pelo */
+	display:flex;align-items:center;justify-content:center;
+	/* la spalla del font (lo spazio sotto la linea di base) fa sembrare la cifra alta:
+	   correzione ottica, non geometrica */
+	min-width:1.65em;height:1.65em;padding:.12em .35em 0;border-radius:1em;box-sizing:border-box;
 	background-color:var(--bl-active-bg,#fff);color:var(--bl-active-color,var(--sidebar-background));
-	text-align:center;line-height:1.2;font-size:.72em;font-weight:600;
-	font-variant-numeric:tabular-nums}
+	line-height:1;font-size:.72em;font-weight:600;font-variant-numeric:tabular-nums}
 :root[data-unread-num] #buffer-list li[data-unread]::after{content:attr(data-unread)}
 /* nothing on the row you are reading */
 :root[data-unread-num] #buffer-list li.active::after{content:none}
-/* rows with a caption are taller: centre on the channel's own line */
-:root[data-unread-num] #buffer-list li[data-shared-head]::after,
-:root[data-unread-num] #buffer-list li[data-pm-head]::after{
-	top:auto;bottom:calc((1.3em + 4px) / 2);transform:translateY(50%)}
 /* follows "Unread dot on the left" — the strip swap is gated on the dot attribute, which number
    mode does not set, so it has to be repeated here */
-:root[data-unread-num][data-dot-left] #buffer-list li{padding-right:0;padding-left:3.4ch}
+:root[data-unread-num][data-dot-left] #buffer-list li{padding-right:0;padding-left:4.8ch}
 :root[data-unread-num][data-dot-left] #buffer-list li > a{padding-left:3px}
 :root[data-unread-num][data-dot-left] #buffer-list li.unread-message::after,
 :root[data-unread-num][data-dot-left] #buffer-list li.unread-highlight::after{
 	right:auto;left:2px}
 :root[data-unread-num][data-dot-left] #buffer-list li[data-shared-head]::before,
-:root[data-unread-num][data-dot-left] #buffer-list li[data-pm-head]::before{left:3.4ch;
+:root[data-unread-num][data-dot-left] #buffer-list li[data-pm-head]::before,
+:root[data-unread-num][data-dot-left] #buffer-list li[data-unread-head]::before{left:4.8ch;
 	padding-left:0}

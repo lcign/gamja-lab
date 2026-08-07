@@ -1,0 +1,161 @@
+fix: unread flags that no message backs up
+
+Two ways a channel ends up marked unread with nothing to show, leaving the sidebar
+unable to say more than "unread, no idea how much".
+
+`unread` is restored from the store as-is. Read the channel from another client and
+soju's MARKREAD arrives with the marker already stored, so the recount is skipped and
+the stale level survives every reload. Nothing delivered after the read marker means
+nothing unread: drop the level and write that back.
+
+History is fetched for the targets that moved since the newest receipt held across all
+buffers, and that point can be well past one buffer's own read marker — so a buffer
+left unread days ago comes back empty. Fetch the window that is missing, from its read
+marker up to where the fetch above started.
+
+⚠️ Which is why those fetches are now awaited and record where they began: a second pass
+running alongside them asks for the same window and every line is inserted twice. And
+since fetchHistoryBetween() ignores its `before` bound — it asks AFTER and keeps going
+until the limit runs out — the upper bound is enforced on the results. Only PRIVMSG and
+NOTICE count as already loaded: on a busy channel the newest lines after the marker are
+joins and quits, and those mark nothing unread.
+
+Two traps in this code: isReceiptBefore() counts equal times as "before", and equal is
+the normal case for a channel read to its end; getReceipt() ignores the type it is
+given and always returns the read receipt — fixing that also moves where fetchBacklog
+starts from, which is a separate call.
+
+diff --git a/components/app.js b/components/app.js
+index fae1f4d..820edbb 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -51,6 +51,8 @@ const configPromise = fetch("./config.json")
+ 	});
+ 
+ const CHATHISTORY_MAX_SIZE = 4000;
++// Enough for a count that stops at 99+ anyway.
++const UNREAD_BACKLOG_SIZE = 100;
+ 
+ function isProduction() {
+ 	// NODE_ENV is set by the Parcel build system
+@@ -533,7 +535,25 @@ export default class App extends Component {
+ 
+ 		let stored = this.bufferStore.get({ name, server: client.params });
+ 		if (client.caps.enabled.has("draft/chathistory") && stored) {
+-			this.setBufferState({ server: serverID, name }, { unread: stored.unread }, () => {
++			let unread = stored.unread;
++
++			// Nothing delivered after the read marker: nothing unread. Without this the
++			// stale flag lives forever — the recount only runs when a MARKREAD disagrees.
++			// ⚠️ Compared by hand: isReceiptBefore() calls equal times "before", and equal
++			// is the normal case. ⚠️ receipts read directly: getReceipt() ignores `type`.
++			let receipts = stored.receipts || {};
++			let delivered = receipts[ReceiptType.DELIVERED];
++			let read = receipts[ReceiptType.READ];
++			// ⚠️ Clear only on positive evidence that nothing is waiting: with no delivery
++			// receipt we know nothing — the level may come from a MARKREAD recount rather
++			// than from messages seen in this browser — so leave it alone.
++			let pending = !delivered || !read || read.time < delivered.time;
++			if (unread !== Unread.NONE && !pending) {
++				unread = Unread.NONE;
++				this.bufferStore.put({ name, server: client.params, unread });
++			}
++
++			this.setBufferState({ server: serverID, name }, { unread }, () => {
+ 				this.updateDocumentTitle();
+ 			});
+ 		}
+@@ -1399,7 +1419,12 @@ export default class App extends Component {
+ 
+ 		let now = irc.formatDate(new Date());
+ 		let targets = await client.fetchHistoryTargets(now, lastReceipt.time);
+-		targets.forEach(async (target) => {
++
++		// Where each fetch below starts from. The pass after this one has to stop exactly
++		// there: ask for the same window twice and every line is inserted twice.
++		let fetchedFrom = new Map();
++
++		await Promise.all(targets.map(async (target) => {
+ 			let from = lastReceipt;
+ 			let to = { time: now };
+ 
+@@ -1425,6 +1450,8 @@ export default class App extends Component {
+ 				client.fetchReadMarker(target.name);
+ 			}
+ 
++			fetchedFrom.set(client.cm(target.name), from.time);
++
+ 			let result;
+ 			try {
+ 				result = await client.fetchHistoryBetween(target.name, from, to, CHATHISTORY_MAX_SIZE);
+@@ -1440,7 +1467,69 @@ export default class App extends Component {
+ 					this.handleChatMessage(serverID, bufName, msg);
+ 				}
+ 			}
+-		});
++		}));
++
++		// The fetches above start at the newest receipt held across all buffers, which can
++		// be well past one buffer's own read marker: that buffer comes back marked unread
++		// with none of the unread messages in it, and nothing can say how much is waiting.
++		// Ask only for the window that is missing, and stop where the fetch above started.
++		for (let stored of this.bufferStore.list(client.params)) {
++			if (stored.name === "*" || stored.closed || !stored.unread || stored.unread === Unread.NONE) {
++				continue;
++			}
++
++			let read = (stored.receipts || {})[ReceiptType.READ];
++			let buf = State.getBuffer(this.state, { server: serverID, name: stored.name });
++			let messages = buf ? buf.messages : [];
++
++			// ⚠️ Only PRIVMSG and NOTICE count as "already here": on a busy channel the
++			// newest lines after the marker are joins and quits, which mark nothing unread.
++			let here = messages.some((msg) => {
++				if (msg.command !== "PRIVMSG" && msg.command !== "NOTICE") {
++					return false;
++				}
++				return !isMessageBeforeReceipt(msg, read);
++			});
++			if (here) {
++				continue;
++			}
++
++			// Upper bound, in order of preference: where the fetch above started, the oldest
++			// line already in the buffer, or now. Everything at or after it is covered.
++			let upper = fetchedFrom.get(client.cm(stored.name)) || now;
++			if (messages.length > 0 && messages[0].tags["time"] < upper) {
++				upper = messages[0].tags["time"];
++			}
++			if (read && !(read.time < upper)) {
++				continue;
++			}
++
++			let result;
++			try {
++				if (read) {
++					result = await client.fetchHistoryBetween(stored.name, read, { time: upper }, UNREAD_BACKLOG_SIZE);
++				} else {
++					result = await client.fetchHistoryBefore(stored.name, upper, UNREAD_BACKLOG_SIZE);
++				}
++			} catch (err) {
++				console.error("Failed to fetch unread backlog for '" + stored.name + "': ", err);
++				continue;
++			}
++
++			for (let msg of result.messages) {
++				// ⚠️ fetchHistoryBetween() ignores its `before`: it asks AFTER and keeps going
++				// until the limit runs out, so the cut has to be made here. Ascending order,
++				// hence the break.
++				if (msg.tags["time"] >= upper) {
++					break;
++				}
++
++				let destBuffers = this.routeMessage(serverID, msg);
++				for (let bufName of destBuffers) {
++					this.handleChatMessage(serverID, bufName, msg);
++				}
++			}
++		}
+ 	}
+ 
+ 	handleConnectSubmit(connectParams) {

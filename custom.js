@@ -273,7 +273,8 @@
 (function () {
 	var MAX = 200, hist = [], idx = 0, draft = '';
 	function composerInput(t) {
-		return (t && t.tagName === 'INPUT' && t.name === 'text' && t.closest && t.closest('#composer')) ? t : null;
+		var tag = t && t.tagName;
+		return ((tag === 'TEXTAREA' || tag === 'INPUT') && t.name === 'text' && t.closest && t.closest('#composer')) ? t : null;
 	}
 	function setValue(inp, v) {
 		inp.value = v;
@@ -355,13 +356,18 @@
 	// Off by default, switched from the Extra panel.
 	var GKEY = 'gamja_group_shared';
 	function grouping() { try { return localStorage.getItem(GKEY) === '1'; } catch (e) { return false; } }
+	// A conditional pin: unread channels gather under the private ones and go home once read.
+	// Only the loose ones — pinned or shared-name channels stay put.
+	var UKEY = 'gamja_unread_top';
+	function unreadTop() { try { return localStorage.getItem(UKEY) === '1'; } catch (e) { return false; } }
+	var lifted = {};   // who is up there, so the one you are reading does not drop while you read it
 
 	function markPinned() {
 		var ul = document.querySelector('#buffer-list ul');
 		if (!ul) return;
 		var lis = Array.prototype.slice.call(ul.children);
-		var group = grouping();
-		var head = null, pin = [], pm = [], dupe = [], rest = [], meta = [], nets = {}, net = '', i, li, m, c;
+		var group = grouping(), top = unreadTop();
+		var head = null, pin = [], pm = [], hot = [], dupe = [], rest = [], meta = [], nets = {}, net = '', i, li, m, c;
 
 		// Pass 1: tie every channel row to the network row above it — the <li> carries no network of
 		// its own, only DOM order does — and count on how many networks each name shows up.
@@ -387,11 +393,23 @@
 			var pinned = m && has(m.name);
 			if (pinned) li.setAttribute('data-pin', ''); else li.removeAttribute('data-pin');
 			var shared = !!(group && m && Object.keys(nets[m.name]).length > 1);
+			var user = isUser(li.firstElementChild);
+			var unread = false;
+			if (top && m && !pinned && !shared && !user) {
+				if (li.classList.contains('unread-message') || li.classList.contains('unread-highlight')) {
+					unread = lifted[m.name] = true;
+				} else if (li.classList.contains('active') && lifted[m.name]) {
+					unread = true;              // read, but still open: it goes home when you leave
+				} else {
+					delete lifted[m.name];
+				}
+			}
 			// the label is drawn by `a::after`, and attr() only reads attributes of its OWN element,
 			// so the anchor needs the value too — on the <li> alone the label came out empty. The <li>
 			// keeps it as well, because the layout rules select on it.
 			var a = li.firstElementChild;
-			if (shared && m.net) {
+			// out of its network, so the row has to say where it came from
+			if ((shared || unread) && m.net) {
 				li.setAttribute('data-net', '@' + m.net);
 				if (a) a.setAttribute('data-net', '@' + m.net);
 			} else {
@@ -400,12 +418,14 @@
 			}
 			li.removeAttribute('data-shared-head');
 			li.removeAttribute('data-pm-head');
+			li.removeAttribute('data-unread-head');
 			// the pin wins: a pinned channel stays in the pinned block even when its name is shared,
 			// it just keeps the @network label so it is not confused with its twin, which stays in
 			// the group below. Private messages are always gathered on their own, right under the
 			// pinned block and above the shared names.
 			if (pinned) pin.push(li);
-			else if (isUser(li.firstElementChild)) pm.push(li);
+			else if (user) pm.push(li);
+			else if (unread) hot.push(li);
 			else if (shared) dupe.push(li);
 			else rest.push(li);
 		}
@@ -424,12 +444,15 @@
 			return x < y ? -1 : x > y ? 1 : 0;
 		});
 		if (pm.length) pm[0].setAttribute('data-pm-head', '');
+		// DOM order, not alphabetical: a block that reshuffles inside itself too is unreadable
+		if (hot.length) hot[0].setAttribute('data-unread-head', '');
 
 		var k = 0;
 		function put(x) { var v = String(k++); if (x.style.order !== v) x.style.order = v; }
 		if (head) put(head);
 		pin.forEach(put);
 		pm.forEach(put);
+		hot.forEach(put);
 		dupe.forEach(put);
 		rest.forEach(put);
 	}
@@ -450,14 +473,32 @@
 		});
 		row.appendChild(lab); row.appendChild(chk);
 		panel.appendChild(row);
+
+		var urow = document.createElement('div');
+		urow.className = 'tp-zoom ut-row';
+		var ulab = document.createElement('span');
+		ulab.textContent = 'Unread on top';
+		var uchk = document.createElement('input');
+		uchk.type = 'checkbox'; uchk.checked = unreadTop(); uchk.style.flex = 'none';
+		uchk.title = 'Channels with unread messages gather under the private ones and go back once read. Pinned and shared-name channels stay where they are.';
+		uchk.addEventListener('change', function () {
+			try { localStorage.setItem(UKEY, uchk.checked ? '1' : '0'); } catch (e) {}
+			lifted = {};
+			markPinned();
+		});
+		urow.appendChild(ulab); urow.appendChild(uchk);
+		panel.appendChild(urow);
 	});
 
 	document.addEventListener('gamja-extra-reset', function () {
 		// `gamja_pins_side` is deliberately NOT cleared: which channels are pinned is data, not a
 		// setting, and Reset is about settings.
-		try { localStorage.removeItem(GKEY); localStorage.removeItem(SCRATCH_KEY); } catch (e) {}
+		try { localStorage.removeItem(GKEY); localStorage.removeItem(UKEY); localStorage.removeItem(SCRATCH_KEY); } catch (e) {}
+		lifted = {};
 		var chk = document.querySelector('.gs-row input[type=checkbox]');
 		if (chk) chk.checked = false;
+		var uchk = document.querySelector('.ut-row input[type=checkbox]');
+		if (uchk) uchk.checked = false;
 		markPinned();
 	});
 
@@ -1225,7 +1266,7 @@ function glExtraTag() {
 	var backdrop = null, area = null, info = null, sendBtn = null, linkBtn = null, sending = false;
 	var PASTE_DAYS = 7;
 
-	function composer() { return document.querySelector('#composer input[type=text]'); }
+	function composer() { return document.querySelector('#composer textarea, #composer input[type=text]'); }
 
 	function lines(txt) {
 		return (txt || '').replace(/\r/g, '').split('\n')
@@ -1552,14 +1593,14 @@ function glExtraTag() {
    A local ignore list: matching lines are removed from the buffer. Both the NICK and the HOST are
    stored, because a nick change would otherwise defeat it — the host comes from the title gamja puts on
    `a.nick` (`realname (user@host)`), which is filled in from the initial WHO.
-   ⚠️ Cosmetic only, and it cannot be otherwise from here: the messages still arrive, soju still stores
-   them, so another client shows them; and unread state and notifications stay gamja's business.
+   The messages still arrive and soju still stores them, so another client shows them — but with
+   `patches/0008` they no longer mark the buffer unread, count, or notify (`gamjaSkipUnread` below).
    `/ignore <nick>` adds, `/ignore` lists, `/unignore <nick|host>` removes. */
 (function () {
 	var KEY = 'gamja_ignores';
 	function load() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
 	function save(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) {} }
-	function composer() { return document.querySelector('#composer input[type=text]'); }
+	function composer() { return document.querySelector('#composer textarea, #composer input[type=text]'); }
 
 	// title looks like `realname (user@host)` or just `user@host`, plus optional extra lines
 	function hostOf(el) {
@@ -1614,6 +1655,23 @@ function glExtraTag() {
 			if (hit) el.setAttribute('data-ignored', ''); else el.removeAttribute('data-ignored');
 		}
 	}
+	/* Asked by the bundle before it marks a buffer unread (patches/0008). Same list and same
+	   criteria as the buffer pass above, on the parsed message instead of the rendered line. */
+	window.gamjaSkipUnread = function (msg) {
+		var list = load();
+		if (!list.length || !msg) return false;
+		var pre = msg.prefix || {};
+		var n = (pre.name || '').toLowerCase();
+		var h = (pre.host || '').toLowerCase();
+		var body = ((msg.params && msg.params[1]) || '').toLowerCase();
+		for (var j = 0; j < list.length; j++) {
+			if (list[j].n && n && list[j].n === n) return true;
+			if (list[j].h && h && list[j].h === h) return true;
+			if (list[j].t && body && body.indexOf(list[j].t) >= 0) return true;
+		}
+		return false;
+	};
+
 	setInterval(pass, 700);
 	document.addEventListener('gamja-refresh', pass);
 	pass();
@@ -1781,7 +1839,7 @@ function glExtraTag() {
 		[/:tableflip:?/gi, '(╯°□°）╯︵ ┻━┻'],
 		[/:unflip:?/gi,    '┬─┬ ノ( ゜-゜ノ)']
 	];
-	function composer() { return document.querySelector('#composer input[type=text]'); }
+	function composer() { return document.querySelector('#composer textarea, #composer input[type=text]'); }
 
 	/* Incoming text too: the token is swapped inside already-rendered lines. Each line is marked once,
 	   so only new ones are looked at; when preact re-renders a line the mark goes with it and the line
@@ -1988,7 +2046,7 @@ function glExtraTag() {
 			return TIMES.indexOf(v) >= 0 ? v : DEF;
 		} catch (e) { return DEF; }
 	}
-	function composer() { return document.querySelector('#composer input[type=text]'); }
+	function composer() { return document.querySelector('#composer textarea, #composer input[type=text]'); }
 
 	function say(text, bad) {
 		if (!toast) {
@@ -2179,7 +2237,7 @@ function glExtraTag() {
    language, and this composer writes English in one channel and Italian in the next. */
 (function () {
 	function mark() {
-		var el = document.querySelector('#composer input[type=text]');
+		var el = document.querySelector('#composer textarea, #composer input[type=text]');
 		if (!el || el.getAttribute('spellcheck') === 'true') return;
 		el.setAttribute('spellcheck', 'true');
 		el.setAttribute('autocorrect', 'on');

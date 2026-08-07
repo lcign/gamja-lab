@@ -1,0 +1,26 @@
+let the page veto the unread state of a message
+
+An ignore list living in the page can hide a bot's lines, but the buffer still lights
+up and the unread count still grows on messages nobody will read — and a desktop
+notification still fires.
+
+One hook, asked before the unread state is raised: the message is still received and
+stored, only the unread state is dropped.
+
+diff --git a/components/app.js b/components/app.js
+index fae1f4d..c0ebe1e 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -784,6 +784,12 @@ export default class App extends Component {
+ 				msgUnread = Unread.MESSAGE;
+ 			}
+ 
++			// The page can veto: a sender it ignores should not light up the buffer, nor
++			// notify. The message still arrives and is stored, only the unread state drops.
++			if (window.gamjaSkipUnread && window.gamjaSkipUnread(msg)) {
++				msgUnread = Unread.NONE;
++			}
++
+ 			if (msgUnread === Unread.HIGHLIGHT && !isDelivered && !irc.parseCTCP(msg)) {
+ 				let title = "New " + kind + " from " + msg.prefix.name;
+ 				if (client.isChannel(bufName)) {

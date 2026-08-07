@@ -1,27 +1,22 @@
 # Optional bundle fixes
 
-> Building gamja from source? Use [`patches/`](patches) instead — same three fixes, plus the two
-> hooks, against the real files.
+Three gamja defects, for whoever does not rebuild. Building from source? Take
+[`patches/`](patches) instead — same fixes against the real files.
 
-Fixes for gamja defects, unrelated to the customizations here — gamja works without them, it just keeps
-the bugs. Each is a hand edit inside `build.*.js`: minified names change on every build, a rebuild
-overwrites everything, and a cached bundle needs the patched file **renamed** (⚠️ never a name already
-served). Building from source instead? Then these belong next to the
-[patches](README.md#patches-for-gamja-itself).
+Each is a hand edit inside `build.*.js`: minified names change on every build, a rebuild overwrites
+everything, and a cached bundle needs the patched file **renamed** — ⚠️ never to a name already served.
 
-- **The "Open buffer" dialog cannot be dismissed** (✕, Esc and click-outside do nothing): unlike every
-  other dialog it is rendered without an `onDismiss` prop, so `dismiss()` calls `undefined` and throws.
-  Pass it `onDismiss` like the others.
-- **A slow `/join` yanks you out of whatever you are reading**: the target is recorded in
-  `switchToChannel` and the switch happens when the server's `JOIN` confirmation arrives, with no
-  timeout and no cancellation — so it can drag you away minutes later, from wherever you moved to
-  (autojoin behaves the same on reconnect). Clear it at the top of `switchBuffer`, the one place every
-  manual switch goes through: `switchBuffer(e){ this.switchToChannel=null; /* … */ }`. The intended jump
-  still works, because the `JOIN` handler tests the field before calling.
-- **History never loads on an already-read buffer**: in `restoreScrollPosition` the guard
-  `if (!e.firstChild) return;` returns before `onScrollTop()`. Make it
-  `if (!e.firstChild) { this.props.onScrollTop(); return }`. Note this does not catch every case — a
-  channel can still render empty, which is what the ⟳ button is for.
+- **The "Open buffer" dialog cannot be dismissed** (✕, Esc and click-outside do nothing): it is the one
+  dialog rendered without an `onDismiss` prop, so `dismiss()` calls `undefined` and throws. Pass it
+  `onDismiss` like the others.
+- **A slow `/join` yanks you out of whatever you are reading**: the target is recorded and the switch
+  happens when the server's `JOIN` arrives, with no timeout and no cancellation, so it can drag you away
+  minutes later (autojoin does the same on reconnect). Clear `switchToChannel` at the top of
+  `switchBuffer`, where every manual switch goes through. The intended jump still works, because the
+  `JOIN` handler tests the field first.
+- **History never loads on an already-read buffer**: in `restoreScrollPosition` the `!firstChild` guard
+  returns before `onScrollTop()`. Call it before returning. ⚠️ It does not catch every case — a channel
+  can still render empty, which is what the ⟳ button is for.
 
 ---
 
