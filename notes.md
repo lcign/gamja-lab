@@ -67,8 +67,9 @@ nothing.
   therefore pins on both.
 - The composer grows because `patches/0006` makes it a textarea — as a hand edit to the built file it
   was a mess, because **ScrollManager already watches the buffer with a `ResizeObserver`** and our own
-  re-pinning was fighting it. ⚠️ Six selectors here look for the composer; miss one and `/paste`,
-  `/image`, history or spell check die in silence.
+  re-pinning was fighting it. ⚠️ Seven places here look for the composer; miss one and `/paste`,
+  `/image`, history, spell check or joining from the `/list` dialog dies in silence — the `/list` one
+  was still asking for `input[name=text]` and its rows simply did nothing when clicked.
 - Emoji (📌 🐇) are drawn by a colour font and ignore `color`; the pin picker approximates with a
   `hue-rotate` filter. A tinted SVG via `mask` is not an option either — gamja's CSP blocks `data:`
   URIs.

@@ -791,18 +791,19 @@
 			listEl.appendChild(more);
 		}
 	}
+	// ⚠️ Both halves of the selector matter: with `patches/0006` the composer is a TEXTAREA, and
+	// looking only for an <input> is what left this click doing nothing at all.
 	function joinChannel(chan) {
-		var comp = document.getElementById('composer');
-		var inp = comp && comp.querySelector('input[name=text]');
-		if (comp && inp) {
+		var inp = document.querySelector('#composer textarea, #composer input[type=text]');
+		if (inp && inp.form) {
 			inp.focus();
 			inp.value = '/join ' + chan;
-			try { inp.dispatchEvent(new InputEvent('input', { bubbles: true })); } catch (e) { inp.dispatchEvent(new Event('input', { bubbles: true })); }
+			inp.dispatchEvent(new Event('input', { bubbles: true }));
 			// deferred submit: on submit gamja reads state.text (controlled), which preact updates
 			// asynchronously from the input event -> without the deferral it would send empty.
 			setTimeout(function () {
-				if (comp.requestSubmit) comp.requestSubmit(); else comp.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-			}, 0);
+				inp.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+			}, 60);
 		}
 		hide();
 	}
