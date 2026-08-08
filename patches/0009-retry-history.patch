@@ -1,0 +1,68 @@
+fix: a failed history fetch leaves the buffer empty for good
+
+`endOfHistory` is the latch that says "no more history for this buffer". It is set
+before the request goes out and rewritten only when the request comes back, so a fetch
+that rejects — the connection dropping while it is in flight is enough — leaves the
+latch closed for the rest of the session. The buffer renders empty and nothing can make
+it ask again: not scrolling, not switching away and back, because the latch survives a
+buffer switch. Only a page reload clears it.
+
+Three parts: don't leave the latch closed on a failure, open it again when the
+connection re-registers, and let the page ask for a retry on the buffer it is showing —
+which is what a reload button needs and cannot do from outside.
+
+diff --git a/components/app.js b/components/app.js
+index fae1f4d..3c812bf 100644
+--- a/components/app.js
++++ b/components/app.js
+@@ -927,6 +927,13 @@ export default class App extends Component {
+ 				break;
+ 			case Client.Status.REGISTERED:
+ 				this.setState({ connectForm: false });
++				// A connection that drops with a history fetch in flight leaves the latch
++				// set on that buffer: it would stay empty until the page is reloaded.
++				this.state.buffers.forEach((buf) => {
++					if (buf.server === serverID) {
++						this.endOfHistory.delete(buf.id);
++					}
++				});
+ 				if (errorID) {
+ 					this.dismissError(errorID);
+ 				}
+@@ -1869,7 +1876,16 @@ export default class App extends Component {
+ 			limit = 200;
+ 		}
+ 
+-		let result = await client.fetchHistoryBefore(buf.name, before, limit);
++		let result;
++		try {
++			result = await client.fetchHistoryBefore(buf.name, before, limit);
++		} catch (err) {
++			// ⚠️ The latch above is set before the fetch: left set on a failure, the buffer
++			// never asks again — not by scrolling, not by switching away and back.
++			this.endOfHistory.delete(buf.id);
++			console.error("Failed to fetch history for '" + buf.name + "': ", err);
++			return;
++		}
+ 		this.endOfHistory.set(buf.id, !result.more);
+ 
+ 		if (result.messages.length > 0) {
+@@ -2156,10 +2172,18 @@ export default class App extends Component {
+ 		setupKeybindings(this);
+ 		window.addEventListener("focus", this.handleWindowFocus);
+ 		window.addEventListener("hashchange", this.handleWindowHashChange);
++
++		// Retry history on the active buffer. The page cannot do this on its own: the latch
++		// is what stops the buffer from asking again, and it survives a buffer switch.
++		window.gamjaReloadHistory = () => {
++			this.endOfHistory.delete(this.state.activeBuffer);
++			this.handleBufferScrollTop();
++		};
+ 	}
+ 
+ 	componentWillUnmount() {
+ 		document.title = this.baseTitle;
++		delete window.gamjaReloadHistory;
+ 		window.removeEventListener("focus", this.handleWindowFocus);
+ 		window.removeEventListener("hashchange", this.handleWindowHashChange);
+ 	}

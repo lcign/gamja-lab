@@ -55,6 +55,10 @@ nothing.
   *less* history for a quiet buffer. Worth reporting upstream, not patching blind.
 - ⚠️ `isReceiptBefore()` counts equal times as *before*, and equal is the normal case for a channel read
   to its end. It cost `patches/0007` a first version that cleared nothing.
+- ⚠️ `endOfHistory` — "no more history for this buffer" — is set **before** the request and rewritten
+  only when it comes back, so one rejected fetch (a connection dropping mid-flight is enough) locks the
+  buffer empty until the page is reloaded. Switching away and back does not clear it, which is why the
+  ⟳ button appeared to do nothing at all: `patches/0009` opens the latch instead of working around it.
 - An ignored sender is vetoed **before** gamja raises the unread state: subtracting from the count
   afterwards would leave the row lit with a count of zero, which shows as `?`.
 - Search covers the lines **currently rendered**. Reaching real history means querying the bouncer,

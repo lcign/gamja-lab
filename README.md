@@ -24,7 +24,8 @@ and 54 commits behind. These files hook gamja's DOM and CSS variables, not a sta
   block and go home once read — an unread **dot** on either side or an unread **count** as a badge,
   long nicks shortened.
 - **Runs of messages**: repeated nick and timestamp dropped, wrapped lines indented into the text column.
-- **⟳ reload** in the buffer header, for a channel that renders empty after joining.
+- **⟳ reload** in the buffer header, for a channel that renders empty — with `patches/0009` it really
+  re-asks for history, without it only switches away and back.
 - **`/paste`**: one message per line, or uploaded to dpaste.com and sent as a link — ⚠️ that leaves the
   network and expires in 7 days.
 - **`/image`**: a picture chosen or dragged in goes to litterbox.catbox.moe and the link is sent — ⚠️ it
@@ -66,8 +67,8 @@ Why any of it is done the way it is: [notes.md](notes.md). The code is commented
 
 ## Patches for gamja itself
 
-Four features need gamja to report or do something it does not on its own, and four are plain gamja
-defects. All eight are in [`patches/`](patches), against gamja **master** (`cdf94d6`) — source, not
+Four features need gamja to report or do something it does not on its own, and five are plain gamja
+defects. All nine are in [`patches/`](patches), against gamja **master** (`cdf94d6`) — source, not
 edits to a built file. Verified in this order on a clean clone (`eslint` clean, `parcel` builds):
 
 ```sh
@@ -82,10 +83,11 @@ npm install && npm run build          # one build, dist/ is what you deploy
 | `0002` | emits a `gamja-list` event with the LIST replies | `/list` dialog |
 | `0003` | the *Open buffer* dialog can be dismissed | — |
 | `0004` | a slow JOIN no longer drags you out of what you are reading | — |
-| `0005` | history is requested for a buffer that renders empty | ⟳ rarely needed |
+| `0005` | history is requested for a buffer that renders empty | — |
 | `0006` | the composer grows with the text (Enter sends, Shift+Enter breaks the line) | long messages |
 | `0007` | no unread flag without messages behind it | Unread count (no `?`) |
 | `0008` | the page can veto the unread state of a message | `/ignore` |
+| `0009` | a failed history fetch no longer leaves the buffer empty for good | ⟳ reload |
 
 💡 The hooks stay thin on purpose: gamja keeps the state it already kept, the tally lives on the page,
 and nothing polls or observes the DOM. Unpatched, gamja runs fine — it keeps the defects, and the

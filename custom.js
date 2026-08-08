@@ -597,14 +597,16 @@
 
 /* ===================== buffer reload (⟳) =====================
    Every so often a channel renders empty right after joining: the buffer is there, the messages
-   are not. Switching to another buffer and back brings them in. This button does exactly that,
-   and nothing else: it clicks gamja's OWN sidebar links, so no state is reached into and no
-   bundle hook is needed. Sits next to the 📌 in the member list header, same injection pattern.
+   are not. Sits next to the 📌 in the member list header, same injection pattern.
 
-   Why a manual button and not a fix: gamja's history-on-empty-buffer defect is already patched in
-   the bundle (`restoreScrollPosition` now calls `onScrollTop()` when the buffer has no children),
-   and the empty render still happens now and then — so what is missing is a way to retry, not
-   another guard. */
+   Two ways to retry, and the first is the one that works: with `patches/0009` gamja exposes
+   `gamjaReloadHistory()`, which reopens its "no more history" latch and asks again. Without it,
+   all we can do is click gamja's OWN sidebar links to switch away and back — ⚠️ which does NOT
+   help when the latch is what is holding the buffer empty, because it survives a buffer switch.
+
+   Why a manual button and not a fix: `patches/0005` already asks for history when the buffer
+   renders with no children, and it still comes up empty now and then — so what is missing is a
+   way to retry, not another guard. */
 (function () {
 	var BACK_MS = 90;
 
@@ -669,6 +671,19 @@
 
 	function reload(btn) {
 		var cur = activeLink(); if (!cur) return;
+
+		// Patched bundle: ask gamja itself, no switching around.
+		if (window.gamjaReloadHistory) {
+			if (btn) btn.classList.add('spin');
+			showNotice();
+			window.gamjaReloadHistory();
+			setTimeout(function () {
+				if (btn) btn.classList.remove('spin');
+				hideNotice();
+			}, 600);
+			return;
+		}
+
 		var href = cur.getAttribute('href'), away = bounceLink(cur);
 		if (!href || !away) return;
 		if (btn) btn.classList.add('spin');
