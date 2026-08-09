@@ -16,7 +16,7 @@ and 54 commits behind. These files hook gamja's DOM and CSS variables, not a sta
 
 <img src="panel-options.png" alt="Extra panel, Options tab" width="330"> <img src="panel-colors.png" alt="Extra panel, Colors tab" width="330"> <img src="sidebar.png" alt="Unread channels gathered on top, with counts and network labels" width="180">
 
-- **Extra panel** next to *Settings*, in two tabs: **29 theme colours**, each row drawn with the colours
+- **Extra panel** next to *Settings*, in two tabs: **31 theme colours**, each row drawn with the colours
   it sets, and the options below. *Reset* restores every default and leaves pinned channels alone.
 - **Channel list**: 📌 pinning, marks for the bouncer and the networks, private messages in their own
   block, optional grouping of names shared across networks as `#channel@network` (the ⧉ block above),

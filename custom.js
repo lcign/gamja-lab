@@ -45,6 +45,7 @@
 		'--main-background': '#212529', '--main-color': '#f8f9fa',
 		'--link-color': '#53b266', '--timestamp-color': '#979797',
 		'--gray': '#979797', '--red': '#fb615b',
+		'--topic-color': '#f8f9fa', '--topic-background': '#212529',
 		'--button-background': '#282879', '--button-background-hover': '#00007c',
 		'--button-color': '#eff7ef', '--button-border': '#131618',
 		'--danger-button-background': '#b20000', '--danger-button-background-hover': '#ff0000',
@@ -74,6 +75,7 @@
 		[GM, 'Timestamp',         '--main-background',     '--timestamp-color',     'fg'],
 		[GM, 'Muted text',        '--main-background',     '--gray',                'fg'],
 		[GM, 'Alert, offline',    '--main-background',     '--red',                 'fg'],
+		[GM, 'Topic',             '--topic-background',    '--topic-color',         'both'],
 
 		[GB, 'Buttons',           '--button-background',   '--button-color',        'both', '--button-border'],
 		[GB, 'Buttons hover',     '--button-background-hover', '--button-color',    'bg'],
@@ -697,6 +699,37 @@
 		}, BACK_MS);
 	}
 
+	/* Stato della rete DENTRO l'area centrale, in cima, invece che nella striscia in alto:
+	   e' un testo da leggere (in caso di guasto un errore lungo, "Bouncer disconnected
+	   from network: failed to register: ...") e in una riga sola si perde.
+
+	   ⚠️ Quel testo vive SOLO nell'intestazione: arriva da `BOUNCER NETWORK ... error=` e
+	   gamja non lo scrive fra i messaggi ne' nel suo avviso globale (`showError` scatta
+	   solo sui numerici IRC). Quindi si rispecchia, non si sposta.
+	   ⚠️ Si appende come ULTIMO figlio di #buffer — l'unico punto che preact tollera — e
+	   in cima lo porta il CSS con `order:-1`. Come PRIMO figlio daremmo a preact due div
+	   dove ne aspetta uno (`.logline-list`): al render dopo riusa il NOSTRO nodo per la
+	   lista dei messaggi e si rompe tutto.
+	   ⚠️ Si riscrive solo quando il testo CAMBIA: toccare il DOM a ogni giro tiene sveglio
+	   il ResizeObserver dello ScrollManager, quello che ci ha dato guerra col composer. */
+	var lastState = '';
+	function netState(head, buf, isServer) {
+		if (!buf) return;
+		var box = buf.querySelector('.bh-netstate');
+		if (!isServer) { if (box) box.remove(); lastState = ''; return; }
+		var d = head.querySelector('.description');
+		var txt = d ? (d.textContent || '').trim() : '';
+		if (!txt) { if (box) box.remove(); lastState = ''; return; }
+		if (box && txt === lastState) return;
+		if (box) box.remove();
+		box = document.createElement('div');
+		box.className = 'bh-netstate';
+		if (!/^(Connected|Connecting|Logging in)/i.test(txt)) box.className += ' bad';
+		box.textContent = txt;
+		buf.appendChild(box);
+		lastState = txt;
+	}
+
 	// The button lives in the buffer header, in front of the channel topic, where it is impossible
 	// to miss. #buffer-header is a GRID (`.title` 1/1, `.description` 2/1, `.actions` 1/2/3), so the
 	// button is APPENDED last — inserting between children is what upsets preact's diff, appending
@@ -705,6 +738,15 @@
 		var head = document.getElementById('buffer-header');
 		if (!head) return;
 		var btn = head.querySelector('button.bh-reload');
+		// Marca intestazione e area messaggi quando il buffer e' un SERVER: al CSS serve
+		// per nascondere lo stato dalla striscia e mostrarlo in cima ai messaggi.
+		// `data-*`, non una classe: preact non lo tocca.
+		var cur = document.querySelector('#buffer-list li.active');
+		var isServer = !!(cur && cur.classList.contains('type-server'));
+		var buf = document.getElementById('buffer');
+		if (isServer) head.setAttribute('data-kind', 'server'); else head.removeAttribute('data-kind');
+		if (buf) { if (isServer) buf.setAttribute('data-kind', 'server'); else buf.removeAttribute('data-kind'); }
+		netState(head, buf, isServer);
 		if (!activeLink()) { if (btn) btn.remove(); return; }
 		if (btn && btn.parentNode === head && btn === head.lastElementChild) return;
 		if (btn) btn.remove();

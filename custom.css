@@ -307,12 +307,49 @@ html{font-size:calc(16px * var(--fs,1))}
 /* ⚠️ `min-width:0` on the header AND on the title is what keeps the sidebar alive: as a grid item
    the header defaults to `min-width:auto`, so an unshrinkable nowrap title made the middle column
    demand more than the window had, and the channel list was squeezed to nothing. */
-#buffer-header{display:flex;align-items:baseline;gap:.5em;min-width:0}
+/* ⚠️ `center`, non `baseline`: con la linea di base il ⟳ (1.35rem) e i pulsanti si
+   appoggiano alla base del testo e sembrano spinti in basso. */
+#buffer-header{display:flex;align-items:center;gap:.5em;min-width:0;
+	/* lo sfondo del topic vale per TUTTA la striscia, altrimenti si colora solo la
+	   parte dietro al testo e il resto della riga resta di un altro colore */
+	background-color:var(--topic-background,var(--main-background))}
 #buffer-header .title{flex:0 1 auto;min-width:0;padding:5px 0 5px 10px;white-space:nowrap;
 	overflow:hidden;text-overflow:ellipsis}
 #buffer-header .description{flex:1 1 auto;min-width:0;max-height:none;padding:5px 0;
-	overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+	overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+	/* colori propri, regolabili dal pannello; i valori di riserva sono quelli di prima,
+	   cosi' chi non li tocca non vede alcuna differenza */
+	color:var(--topic-color,var(--main-color));background:none}
 #buffer-header .actions{flex:0 0 auto;margin-left:auto}
+/* Sui buffer di SERVER lo stato della rete NON sta nella striscia in alto: quella resta
+   UNA riga, con nome a sinistra e ⟳/azioni a destra. Il testo ricompare come pannello in
+   cima all'AREA DEI MESSAGGI (netState in custom.js).
+   💡 Il pannello e' appeso in fondo a #buffer e portato in cima da `order:-1`: dentro
+   #buffer gamja mette un figlio solo (`.logline-list`), quindi la colonna flex non
+   scombina niente, e `sticky` lo tiene visibile anche scorrendo. */
+#buffer-header[data-kind=server] .description{display:none}
+/* ...e al suo posto si mostra il NOME DELLA RETE, che per i buffer di server gamja
+   mette nel titolo (`getServerName`). Altrimenti quella riga resterebbe vuota: il
+   titolo lo nascondiamo di regola perche' lo dice la barra laterale, ma qui l'unica
+   cosa che ci rimaneva era il ⟳. I pulsanti restano a destra. */
+#buffer-header[data-kind=server] .title{display:block;font-weight:600}
+#buffer[data-kind=server]{display:flex;flex-direction:column}
+#buffer[data-kind=server] .logline-list{order:0}
+/* ⚠️ Niente riquadro: dentro il flusso, come PRIMA RIGA del log. Con bordo a sinistra,
+   fondo proprio e `sticky` sembrava un pannello incollato sopra i messaggi — "separato",
+   che e' esattamente quello che non si voleva. Rientro allineato alle righe di log
+   (`.logline-list` ha `padding:10px`), stesso `pre-wrap`, e il colore dice se e' uno
+   stato normale o un guasto. Scorre col log: non e' un cartello, e' la prima riga. */
+#buffer .bh-netstate{order:-1;flex:0 0 auto;
+	margin:0;padding:10px 10px 0;border:0;background:none;
+	white-space:pre-wrap;overflow-wrap:break-word;line-height:1.4;
+	/* ⚠️ NON usa i colori del topic: quello sfondo, dentro l'area dei messaggi, si vede
+	   come una fascia estranea. Qui solo il testo, col bianco luminoso dell'intestazione
+	   (`inherit` prenderebbe il colore del buffer, piu' smorto) e nessun fondo. */
+	color:var(--main-color);background:none}
+/* il rosso solo quando e' un guasto: negli stati normali il testo resta quello di
+   sempre, com'era quando stava nell'intestazione */
+#buffer .bh-netstate.bad{color:#ff6b6b}
 
 /* buffer reload (⟳), in front of the channel topic. #buffer-header is a grid: `.title` sits in
    1/1, `.description` (the topic) in 2/1, `.actions` spans 1/2/3. custom.js appends the button as
