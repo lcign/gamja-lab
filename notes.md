@@ -20,6 +20,22 @@ install them.
   in a mark with its own `font-size` the caption height came out ~72% of the truth. `@property` with
   `syntax:"<length>"` resolves it where it is declared.
 
+## The buffer header and the server buffers
+
+- `#buffer` holds a **single child**, `.logline-list`. To show something at the top of the message
+  area, append it as the **last child** and lift it with `order:-1` (the container becomes a flex
+  column). ⚠️ Inserting it as the *first* child hands preact two divs where it expects one: on the
+  next render it reuses **our** node for the message list.
+- ⚠️ A bouncer network error lives **only** in the header's `.description`. It arrives as
+  `BOUNCER NETWORK … error=` and gamja writes it neither into the messages nor into its global
+  alert — `showError()` only fires on IRC numerics. Hide that line and the error becomes invisible.
+- `align-items: baseline` on the header makes the ⟳ and the action buttons look pushed down: a glyph
+  set larger than the text sits on the text's baseline. `center` is what reads straight.
+- A background belongs on `#buffer-header`, not on `.description`: set on the text element it colours
+  only the patch behind the words and the rest of the strip stays the old colour.
+- ⚠️ `color: inherit` inside `#buffer` is **dimmer** than the header's `--main-color`: the same text
+  moved from the header into the buffer visibly loses its brightness.
+
 ## CSS in this file
 
 - `custom.css` loads after gamja's, so conflicts are settled by **specificity and then order** — twice
