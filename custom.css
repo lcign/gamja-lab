@@ -8,15 +8,15 @@
 /* --- dark always on (gamja's own dark values, independent of the OS setting) --- */
 :root{
 	color-scheme:dark;
-	--main-background:#212529;
+	--main-background:#1f2020;
 	--main-color:#f8f9fa;
 	--sidebar-background:#131618;
 	--expander-background:#424446;
 	--expander-background-hover:#2a2d2f;
 	--expander-border:#6c6c6c;
-	--button-color:#eff7ef;
-	--button-background:#282879;
-	--button-background-hover:#00007c;
+	--button-color:#feffff;
+	--button-background:#008e00;
+	--button-background-hover:#008f51;
 	--button-border:#131618;
 	--danger-button-color:#eff7ef;
 	--danger-button-background:#b20000;
@@ -27,9 +27,11 @@
 	--gray:#979797;
 	--red:#fb615b;
 	--outline-color:#6e7681;
-	--highlight-color:#ffe08a;
-	--highlight-bg:#463a10;
-	--activity-color:#d9a441;
+	--highlight-color:#000000;
+	--highlight-bg:#8df900;
+	--activity-color:#ff9300;
+	--bl-active-bg:#ff9300;
+	--bl-active-color:#212121;
 }
 
 /* --- everything in JetBrains Mono (terminal look) --- */
@@ -252,6 +254,13 @@ html{font-size:calc(16px * var(--fs,1))}
 
 /* ignored lines, and the little dialog that manages them */
 #buffer .logline[data-ignored]{display:none}
+/* ...e con lei sparisce il "New messages" quando i soli messaggi nuovi sono ignorati:
+   il separatore lo disegna gamja in base alla ricevuta di lettura, che non sa niente
+   della lista degli ignorati (`patches/0008` ferma il conteggio, non questa riga), e
+   restava un "New messages" senza niente sotto.
+   💡 `:has(~ ...)` guarda AVANTI fra i fratelli: nasconde il separatore se dopo di lui
+   non c'e' nessuna riga visibile. */
+#buffer .unread-separator:not(:has(~ .logline:not([data-ignored]))){display:none}
 #ignBackdrop{position:fixed;inset:0;z-index:10071;background:rgba(0,0,0,.6);display:flex;
 	align-items:center;justify-content:center}
 #ignBackdrop.hidden{display:none}
@@ -312,7 +321,7 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer-header{display:flex;align-items:center;gap:.5em;min-width:0;
 	/* lo sfondo del topic vale per TUTTA la striscia, altrimenti si colora solo la
 	   parte dietro al testo e il resto della riga resta di un altro colore */
-	background-color:var(--topic-background,var(--main-background))}
+	background-color:var(--topic-background,#1f2020)}
 #buffer-header .title{flex:0 1 auto;min-width:0;padding:5px 0 5px 10px;white-space:nowrap;
 	overflow:hidden;text-overflow:ellipsis}
 #buffer-header .description{flex:1 1 auto;min-width:0;max-height:none;padding:5px 0;
@@ -395,7 +404,7 @@ html{font-size:calc(16px * var(--fs,1))}
 #buffer-list li[data-pm-head],
 #buffer-list li[data-unread-head]{--cap:calc(1.3em + 4px)}
 /* full width, dot strip included */
-#buffer-list li.active{background-color:var(--bl-active-bg,#fff)}
+#buffer-list li.active{background-color:var(--bl-active-bg,#ff9300)}
 #buffer-list li.active > a{background-color:transparent}
 :root[data-unread-dot] #buffer-list li.unread-message > a::after,
 :root[data-unread-dot] #buffer-list li.unread-highlight > a::after{content:none}
@@ -501,7 +510,7 @@ html{font-size:calc(16px * var(--fs,1))}
 /* ⚠️ colour only: the BACKGROUND of the active row lives on the <li> (see the list block above), so
    that it covers the whole row. Painting it here as well — later in the file, same specificity —
    silently overrode that and brought the half-row highlight back. */
-#buffer-list li.active a{color:var(--bl-active-color,var(--sidebar-background))}
+#buffer-list li.active a{color:var(--bl-active-color,#212121)}
 
 /* /image: the upload notice, and the outline that says a file may be dropped */
 #imgToast{position:fixed;right:14px;bottom:52px;z-index:10041;max-width:min(60ch,80vw);
@@ -606,7 +615,7 @@ kbd{
 #buffer-list li.active > a,
 #buffer-list li.active.unread-message > a,
 #buffer-list li.active.unread-highlight > a{
-	color:var(--bl-active-color,var(--sidebar-background))}
+	color:var(--bl-active-color,#212121)}
 /* (the "no dot on the channel you are reading" rule used to live here, on `a::after`. It was
    removed: that pseudo-element now carries the @network label, and the rule was hiding it as soon as
    the channel was selected. The dot is suppressed on the active row up in the list block, on
@@ -656,7 +665,7 @@ kbd{
 	/* la spalla del font (lo spazio sotto la linea di base) fa sembrare la cifra alta:
 	   correzione ottica, non geometrica */
 	min-width:1.65em;height:1.65em;padding:.12em .35em 0;border-radius:1em;box-sizing:border-box;
-	background-color:var(--bl-active-bg,#fff);color:var(--bl-active-color,var(--sidebar-background));
+	background-color:var(--bl-active-bg,#ff9300);color:var(--bl-active-color,#212121);
 	line-height:1;font-size:.72em;font-weight:600;font-variant-numeric:tabular-nums}
 :root[data-unread-num] #buffer-list li[data-unread]::after{content:attr(data-unread)}
 /* nothing on the row you are reading */
